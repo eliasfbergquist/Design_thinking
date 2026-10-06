@@ -1,0 +1,23 @@
+{
+  "name": "dinder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "week": "node scripts/preview-week.mjs",
+    "shots": "node scripts/shots.mjs",
+    "images": "node scripts/fetch-images.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.49.1",
+    "vite": "^6.2.0"
+  }
+}
