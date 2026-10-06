@@ -103,6 +103,7 @@ The dishes themselves are an output of the scorer, so they move when votes or `S
 ## Repository
 
 ```
+README.md               how to run it. This file is the rest
 index.html              fonts, title, favicon, viewport
 vite.config.js          host true, port 5173
 src/main.jsx            React root, StrictMode
