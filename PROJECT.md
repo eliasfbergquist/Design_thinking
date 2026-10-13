@@ -36,19 +36,21 @@ Web is only the delivery wrapper. Layout, type, and tap targets are for a phone 
 
 The default is that everyone is in for dinner. A person can sit out a day. The whole flat can mark a day as eating out (no meal, no duties, rota does not move).
 
-The week calendar (`#/availability`) is where you see the flat at a glance. A cell is green when that person is in and can cook and wash, amber when they are in but cannot cook or cannot wash, stone when they are out, and striped when the flat is eating out. Only the person holding the phone can change their own row. Switch the name at the top to answer for someone else. The day screen still has Who's in for that one night, with the same rule: green means selected, stone means not, and other people's rows stay readable and do not take taps.
+Availability (`#/availability`) is a month for the person holding the phone. A day is green when they are in and can cook and wash, amber when they are in but cannot cook or cannot wash, stone when they are out, and striped when the flat is eating out. The selected day has a dark ring, and In, Cook, and Wash stay pinned under the month. Switch the name at the top to answer for someone else. The day screen still has Who's in for that one night, with the same rule: green means selected, stone means not, and other people's rows stay readable and do not take taps.
 
 ### Swipes
 
 Swipes belong to whoever is marked as holding the phone. The plan is shared.
 
 - **Yes** — I'd eat this. Worth 1.6 when that person is eating.
-- **Love** — cook it soon. Worth 3.
+- **Love** — you want this dinner. Worth 3. The card stamps Love. There is no separate "soon".
 - **Nope** — don't plan this for me while I'm eating. Worth −3, and it moves the meal into the "dislike" band so automatic planning skips it. The button, the stamp, and the notes all say "nope". The saved vote is still `'no'`.
 
 A nope is a veto for *automatic* planning only. The flat can still pick that meal by hand. Unseen meals score 0. Nopes do not expire.
 
-The suggested dinner, and each home night on the week plan, shows who loved it, said yes, said nope, or has not swiped. On the day that is a labeled list. On the plan it is a row of faces: rust ring for love, green for yes, tomato for nope, faded for not yet. `#/swipes` lists the phone holder's own votes, grouped Loved, Yes, and Nope. It opens from "Your swipes" on the deck, the empty deck, and the name menu. Switching person shows that person's list.
+The suggested dinner, and each home night on the week plan, shows who loved it, said yes, said nope, or has not swiped. On the day that is a labeled list. On the plan it is a row of faces: rust ring for love, green for yes, tomato for nope, faded for not yet. `#/swipes` lists the phone holder's own votes, grouped Loved, Yes, and Nope. It opens from the name at the top. Switching person shows that person's list.
+
+A dinner that has already happened, and the end of cook mode for today or a past night, can be rated Love, Yes, or Nope. That write replaces the swipe already stored for the person holding the phone.
 
 The deck order is fixed for the catalog. Voting removes a card. The card that was behind it is the next one. Do not rebuild the order from the remaining cards or the peek and the landing card will disagree.
 
@@ -306,7 +308,7 @@ Equal shares are an even draw, with a small edge to someone who has never done i
 
 The round-robin is computed on the full catalog and then filtered. Removing a voted card must not pull a later category forward. That was the swipe bug: the peek was `deck[1]` of a freshly interleaved list, and the card that landed was a different recipe.
 
-Swipe shows two cards. The back one is `deck[1]`, scaled and shifted down, `pointer-events: none`, `z-index: 1`. The top card is `z-index: 2`. The whole top card is the drag surface, photo and text. The text does not scroll on its own, and stamps ignore pointers, so a drag that starts on the title moves the card. Commit waits 220ms so the exit animation can finish, then dispatches `vote`. Thresholds: x > 96 yes, x < −96 nope, y < −88 and |x| < 80 love. Arrow keys do the same, except while an input is focused. Empty deck offers Browse and "Swipe them again" (`clear-my-votes` for the current person only). The button, the stamp, and the tip all say Nope.
+Swipe shows two cards. The back one is `deck[1]`, scaled and shifted down, `pointer-events: none`, `z-index: 1`. The top card is `z-index: 2`. The whole top card is the drag surface, photo and text. The text does not scroll on its own, and stamps ignore pointers, so a drag that starts on the title moves the card. Commit waits 220ms so the exit animation can finish, then dispatches `vote`. Thresholds: x > 96 yes, x < −96 nope, y < −88 and |x| < 80 love. Arrow keys do the same, except while an input is focused. Empty deck offers Browse and "Swipe them again" (`clear-my-votes` for the current person only). There is no vote button row. The first open shows a coach until `coachVersion` is 1. Arrow keys still vote, except while an input is focused. The nope stamp says Nope. The up stamp says Love.
 
 ### Reducer actions
 
@@ -341,15 +343,15 @@ Screens call methods on `useStore()`. Those dispatch:
 
 ### Swipe — `src/screens/Swipe.jsx`
 
-Deck for `meId`. The card names allergens, spicy, quick (25 minutes or under), the blurb, who else already said yes or love, hard blocks, and the first swap. The tip names the person holding the phone. Love throws confetti. "Your swipes" opens the list for this person.
+Deck for `meId`. There are no Yes, Love, or Nope buttons. Drag the card: right for yes, left for nope, up for love. The first visit shows that as a coach card until Got it. The card names allergens, spicy, quick (25 minutes or under), the blurb, who else already said yes or love, hard blocks, and the first swap. Love throws confetti and stamps the card Love. Swipe history is only in the name menu.
 
 ### Plan — `src/screens/Plan.jsx`
 
-Hero for today, then a week. Offset runs from −2 to 3. Eating-out rows and empty rows drop the thumbnail (`no-photo`). Today gets a highlight. `eatingNote` and `dutyNote` are shared with the day screen. Each home dinner shows a row of faces: a rust ring loved it, green said yes, tomato said nope, faded has not swiped. **Availability** opens the week calendar. **Shopping list** opens a sheet of ingredients for the home dinners in the week on screen. Quantities with the same item and unit are added. Optional ingredients sit under "On the side". Eating out and empty nights are left off. Ticks last only while the sheet is open.
+Hero for today, then a week. Offset runs from −2 to 3. Eating-out rows and empty rows drop the thumbnail (`no-photo`). Today gets a highlight. `eatingNote` and `dutyNote` are shared with the day screen. Each home dinner shows a row of faces: a rust ring loved it, green said yes, tomato said nope, faded has not swiped. **Availability** opens the month. **Shopping list** opens a sheet for the week on screen. The nights in that week start selected when they have a home dinner, and each can be turned off. Quantities with the same item and unit are added. Optional ingredients sit under "On the side". Eating out and empty nights are left off. Ticks last only while the sheet is open.
 
 ### Day — `src/screens/Day.jsx`
 
-At home / Eating out. Meal row links into cook mode. A suggestion shows an amber rail, who loved it, said yes, said nope, or has not swiped, and **Accept this dinner**, plus Another idea (still a suggestion) and Pick instead. A chosen dinner shows a green rail, Different idea, Change dinner, and Make this a suggestion again. Who's in lists the phone holder first. Only that row can change In, Cook, and Wash. Green means selected, stone means not. Other rows stay readable and do not accept taps. Duties line plus Shuffle. Past days are labeled "already happened" and stay editable, which will rewrite history the rota later reads. Choose dinner is a sheet with search. With no query it hides blocked meals, because there are a hundred recipes. Search includes them. A nope shows up as "Someone said nope".
+At home / Eating out. Meal row links into cook mode. A suggestion shows an amber rail, who loved it, said yes, said nope, or has not swiped, and **Accept this dinner**, plus Another idea (still a suggestion) and Pick instead. Today and past home dinners can be rated, which replaces that person's swipe. A chosen dinner shows a green rail, Different idea, Change dinner, and Make this a suggestion again. Who's in lists the phone holder first. Only that row can change In, Cook, and Wash. Green means selected, stone means not. Other rows stay readable and do not accept taps. Duties line plus Shuffle. Past days are labeled "already happened" and stay editable, which will rewrite history the rota later reads. Choose dinner is a sheet with search. With no query it hides blocked meals, because there are a hundred recipes. Search includes them. A nope shows up as "Someone said nope".
 
 ### Recipes — `src/screens/Recipes.jsx`
 
@@ -357,7 +359,7 @@ Search matches title, blurb, and ingredient names. "Everyone can eat" uses `work
 
 ### Cook — `src/screens/Cook.jsx`
 
-Ingredients or one step at a time. Servings scale with `scaleQty`: quantities become quarters (¼ ½ ¾), and amounts of 40 or more snap to the nearest 5. Checks persist per recipe id. If `?d=` is set, blocks and swaps use that day's eaters; otherwise the whole flat. Requests a screen wake lock and ignores failure. Done on the last step returns to the plan, or to the recipe if there was no day.
+Ingredients or one step at a time. Servings scale with `scaleQty`: quantities become quarters (¼ ½ ¾), and amounts of 40 or more snap to the nearest 5. Checks persist per recipe id. If `?d=` is set, blocks and swaps use that day's eaters; otherwise the whole flat. Requests a screen wake lock and ignores failure. Done on the last step of today or a past night asks for a rating, which replaces that person's swipe, then returns to the plan. A future night, or a recipe opened with no day, skips the rating and returns to the recipe.
 
 ### House — `src/screens/House.jsx`
 
@@ -365,11 +367,11 @@ Intro names the seven people. The seed has no diets, allergies, or swipes. Diet 
 
 ### Availability — `src/screens/Availability.jsx`
 
-A week grid. Columns are days, rows are people. The label is "You" for the phone holder and the first name for everyone else, so Lars Kristian reads as Lars. The selected day is the column with the dark ring. Tapping a cell only selects that day; the toggles underneath change In, Cook, and Wash for the phone holder. Eating out has no toggles, and says to open the day if dinner moves home. Offset matches the plan, −2 to 3. `?d=` focuses that date when it falls inside the range. "Open the day" goes to `#/day/{date}`. The plan and the day's Who's in both link here.
+One month for the phone holder. Days outside the plan are blank. The selected day has a dark ring, and In, Cook, and Wash stay pinned at the bottom. Eating out has no toggles. `?d=` opens that date. "Open the day" goes to `#/day/{date}`. The plan and the day's Who's in both link here.
 
 ### Swipes — `src/screens/Swipes.jsx`
 
-Loved, yes, and nope for `meId`, each recipe linking to its page. The who-sheet and the swipe screen both open it.
+Loved, yes, and nope for `meId`, each recipe linking to its page. The name menu opens it.
 
 ### Add recipe — `src/screens/AddRecipe.jsx`
 
@@ -458,6 +460,10 @@ The session made the prototype match this flat, then left a clean demo with no o
 **What people think.** The suggestion and the week rows show who loved a recipe, said yes, said nope, or has not swiped. `#/swipes` is that person's own history. Voting does not redraw the week; a dinner already on the plan stays there, so a nope can show on a suggestion until someone asks for another idea.
 
 **Seed versions the same day.** `SEED_VERSION` 3 was the rename and the first product fixes. 4 cleared the scripted preferences. 5 added the calendar, confetti, vote faces, the no-repeat rule, and the swipes list. 6 throws away the votes and availability edits made while checking those screens, so a reload is the clean demo again.
+
+### 2026-10-13, later
+
+Availability is one person's month, with In, Cook, and Wash pinned under the calendar. A made dinner can be rated, and that rating replaces the earlier swipe. The swipe deck has no Yes, Love, or Nope buttons. The up-swipe stamp says Love. Swipe history stays in the name menu. The shopping list lets you turn nights off. The first visit to the deck explains the three drags.
 
 ## Open questions
 

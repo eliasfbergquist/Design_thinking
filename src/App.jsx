@@ -92,7 +92,7 @@ function Shell() {
           </button>
         </header>
       )}
-      <main className={route.name === 'swipe' ? 'main deck-main' : cooking ? 'main cook-main' : 'main'}>{screen}</main>
+      <main className={cooking ? 'main cook-main' : route.name === 'swipe' ? 'main deck-main' : route.name === 'availability' ? 'main avail-main' : 'main'}>{screen}</main>
       {!cooking && <Nav name={route.name} />}
       {store.whoOpen && (
         <Sheet title="Who's holding the phone?" onClose={() => store.setWhoOpen(false)} testId="sheet-who">

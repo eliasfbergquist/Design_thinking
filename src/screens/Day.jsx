@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
-import { Avatar, FoodImg, Sheet, VoteBreakdown } from '../ui.jsx'
+import { Avatar, FoodImg, RateMeal, Sheet, VoteBreakdown } from '../ui.jsx'
 import { formatWhen, hardBlocks, listNames, rankRecipes, recipeById, swapsFor, todayISO } from '../logic.js'
 import { dutyNote, eatingNote } from './Plan.jsx'
 
@@ -75,6 +75,7 @@ export function DayScreen({ date }) {
                     : 'A suggestion for who’s home. Accept it, or look at another before you do.'}
                 </p>
                 <VoteBreakdown recipeId={recipe.id} />
+                {(past || date === todayISO()) && <RateMeal recipeId={recipe.id} />}
               </>
             ) : (
               <p>Nothing fits the people who are in. Someone may need to sit out, or add a recipe.</p>

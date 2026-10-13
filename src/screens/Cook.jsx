@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { eatersOf, hardBlocks, recipeById, scaleQty, swapsFor } from '../logic.js'
+import { RateMeal } from '../ui.jsx'
+import { eatersOf, hardBlocks, recipeById, scaleQty, swapsFor, todayISO } from '../logic.js'
 
 export function CookScreen({ id, day }) {
   const store = useStore()
@@ -53,10 +54,16 @@ export function CookScreen({ id, day }) {
   const factor = servings / (recipe.serves || 4)
   const done = recipe.ingredients.filter((_, index) => checks[index]).length
   const back = day ? `#/day/${day}` : `#/recipe/${recipe.id}`
+  const canRate = Boolean(day && day <= todayISO())
+
+  function leave() {
+    window.location.hash = day ? '#/plan' : `#/recipe/${recipe.id}`
+  }
 
   function finish() {
     if (step >= recipe.steps.length - 1) {
-      window.location.hash = day ? `#/plan` : `#/recipe/${recipe.id}`
+      if (canRate) setMode('rate')
+      else leave()
       return
     }
     setStep((value) => value + 1)
@@ -69,22 +76,31 @@ export function CookScreen({ id, day }) {
           Close
         </a>
         <div>
-          <p className="eyebrow">{mode === 'steps' ? `Step ${step + 1} of ${recipe.steps.length}` : 'Ingredients'}</p>
+          <p className="eyebrow">{mode === 'rate' ? 'Rate it' : mode === 'steps' ? `Step ${step + 1} of ${recipe.steps.length}` : 'Ingredients'}</p>
           <h1>{recipe.title}</h1>
         </div>
       </header>
       <div className="progress" aria-hidden="true">
         <span style={{ width: mode === 'ingredients' ? '8%' : `${((step + 1) / recipe.steps.length) * 100}%` }} />
       </div>
-      <div className="segment cook-seg">
-        <button type="button" className={mode === 'ingredients' ? 'on' : ''} data-testid="mode-ingredients" onClick={() => setMode('ingredients')}>
-          Ingredients
-        </button>
-        <button type="button" className={mode === 'steps' ? 'on' : ''} data-testid="mode-steps" onClick={() => setMode('steps')}>
-          Steps
-        </button>
-      </div>
+      {mode !== 'rate' && (
+        <div className="segment cook-seg">
+          <button type="button" className={mode === 'ingredients' ? 'on' : ''} data-testid="mode-ingredients" onClick={() => setMode('ingredients')}>
+            Ingredients
+          </button>
+          <button type="button" className={mode === 'steps' ? 'on' : ''} data-testid="mode-steps" onClick={() => setMode('steps')}>
+            Steps
+          </button>
+        </div>
+      )}
       <div className="cook-scroll">
+        {mode === 'rate' ? (
+          <div className="cook-rate">
+            <p className="eyebrow">You made it</p>
+            <RateMeal recipeId={recipe.id} />
+          </div>
+        ) : (
+          <>
         {blocks.length > 0 && <p className="warn cook-note">{blocks.join(' · ')}</p>}
         {swaps.map((swap) => (
           <p className="swap cook-note" key={swap}>{swap}</p>
@@ -132,9 +148,15 @@ export function CookScreen({ id, day }) {
         ) : (
           <p className="step-text">{recipe.steps[step]}</p>
         )}
+          </>
+        )}
       </div>
       <footer className="cook-foot">
-        {mode === 'ingredients' ? (
+        {mode === 'rate' ? (
+          <button type="button" className="btn full" onClick={leave}>
+            Back to the week
+          </button>
+        ) : mode === 'ingredients' ? (
           <button type="button" className="btn full" onClick={() => setMode('steps')}>
             Start cooking
           </button>

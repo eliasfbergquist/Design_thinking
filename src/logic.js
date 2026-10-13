@@ -414,6 +414,7 @@ export function createInitialState() {
     seedVersion: SEED_VERSION,
     meId: 'elias',
     dismissedTip: false,
+    coachVersion: 0,
     whoOpen: false,
     roommates,
     recipes,
@@ -590,7 +591,7 @@ export function reducer(state, action) {
     case 'replace':
       return action.state
     case 'dismiss-tip':
-      return { ...state, dismissedTip: true }
+      return { ...state, dismissedTip: true, coachVersion: 1 }
     case 'vote': {
       const meId = state.meId
       return {

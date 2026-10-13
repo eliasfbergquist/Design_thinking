@@ -56,9 +56,6 @@ export function SwipeScreen() {
         <button type="button" className="btn ghost" onClick={store.clearMyVotes}>
           Swipe them again
         </button>
-        <a className="btn ghost" href="#/swipes">
-          Your swipes
-        </a>
       </div>
     )
   }
@@ -75,14 +72,17 @@ export function SwipeScreen() {
   return (
     <div className="deck">
       {loveBurst > 0 && <LoveConfetti burst={loveBurst} />}
-      <a className="deck-link" href="#/swipes" data-testid="your-swipes">
-        Your swipes
-      </a>
-      {!store.dismissedTip && (
-        <div className="tip">
-          <p>Swiping as {store.roommates.find((person) => person.id === store.meId)?.name}. Right for yes, left for nope, up if you want it soon.</p>
-          <button type="button" onClick={store.dismissTip} aria-label="Dismiss">
-            ×
+      {(store.coachVersion || 0) < 1 && (
+        <div className="coach" role="dialog" aria-label="How to swipe">
+          <p className="eyebrow">Swiping as {store.roommates.find((person) => person.id === store.meId)?.name}</p>
+          <h2>Drag the card</h2>
+          <ul>
+            <li><strong>Right</strong> Yes</li>
+            <li><strong>Left</strong> Nope</li>
+            <li><strong>Up</strong> Love</li>
+          </ul>
+          <button type="button" className="btn" onClick={store.dismissTip}>
+            Got it
           </button>
         </div>
       )}
@@ -152,17 +152,6 @@ export function SwipeScreen() {
           )
         })}
       </div>
-      <div className="vote-bar">
-        <button type="button" className="vote nope" onClick={() => commit('no')}>
-          Nope
-        </button>
-        <button type="button" className="vote love" data-testid="vote-love" onClick={() => commit('love')}>
-          Love
-        </button>
-        <button type="button" className="vote yes" onClick={() => commit('yes')}>
-          Yes
-        </button>
-      </div>
     </div>
   )
 }
@@ -217,7 +206,7 @@ function CardBody({ recipe, drag, loved }) {
         Nope
       </span>
       <span className="stamp love" style={{ opacity: loveOpacity }}>
-        Soon
+        Love
       </span>
       <div className="swipe-body">
         <div className="pills">

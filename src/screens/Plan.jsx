@@ -132,17 +132,46 @@ export function PlanScreen() {
 }
 
 function ShopSheet({ store, dates, title, onClose }) {
+  const [picked, setPicked] = useState(() =>
+    dates.filter((date) => {
+      const day = store.plans[date]
+      return day && day.status !== 'out' && day.recipeId
+    }),
+  )
   const [checked, setChecked] = useState({})
-  const { meals, items, skipped } = shoppingList(store, dates)
+  const chosen = dates.filter((date) => picked.includes(date))
+  const { meals, items, skipped } = shoppingList(store, chosen)
   const needed = items.filter((item) => !item.optional)
   const optional = items.filter((item) => item.optional)
   function toggle(key) {
     setChecked((current) => ({ ...current, [key]: !current[key] }))
   }
+  function toggleDate(date) {
+    setPicked((current) => (current.includes(date) ? current.filter((item) => item !== date) : [...current, date]))
+  }
   return (
     <Sheet title={`${title} shopping`} onClose={onClose} testId="shop-sheet">
-      {meals.length === 0 ? (
-        <p>No home dinners this week, so there is nothing to buy.</p>
+      <div className="shop-days" data-testid="shop-days">
+        {dates.map((date) => {
+          const when = formatWhen(date)
+          const on = picked.includes(date)
+          return (
+            <button
+              type="button"
+              key={date}
+              className={on ? 'chip-toggle on' : 'chip-toggle'}
+              aria-pressed={on}
+              onClick={() => toggleDate(date)}
+            >
+              {when.weekday} {when.day}
+            </button>
+          )
+        })}
+      </div>
+      {chosen.length === 0 ? (
+        <p>Pick the nights you're shopping for.</p>
+      ) : meals.length === 0 ? (
+        <p>Those nights have no home dinner, so there is nothing to buy.</p>
       ) : (
         <>
           <div className="shop-head">

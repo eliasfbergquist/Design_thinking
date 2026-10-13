@@ -75,6 +75,35 @@ export function VoteBreakdown({ recipeId, compact = false }) {
   )
 }
 
+export function RateMeal({ recipeId }) {
+  const store = useStore()
+  const current = store.votes[store.meId]?.[recipeId] || null
+  const choices = [
+    ['no', 'Nope'],
+    ['love', 'Love'],
+    ['yes', 'Yes'],
+  ]
+  return (
+    <div className="rate" data-testid="rate-meal">
+      <p>How was it?</p>
+      <div className="rate-actions">
+        {choices.map(([choice, label]) => (
+          <button
+            type="button"
+            key={choice}
+            className={current === choice ? `rate-${choice} on` : `rate-${choice}`}
+            aria-pressed={current === choice}
+            onClick={() => store.vote(recipeId, choice)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="quiet">{current ? 'Saved as your swipe. Choosing again replaces it.' : 'This is saved as your swipe.'}</p>
+    </div>
+  )
+}
+
 export function Logo() {
   return (
     <span className="logo">
