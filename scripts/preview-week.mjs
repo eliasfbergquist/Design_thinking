@@ -11,8 +11,8 @@ for (const offset of [0, 1]) {
     const dish = personById(state, day.dishId)
     const out = state.roommates.filter((person) => day.members[person.id] && !day.members[person.id].eating).map((person) => person.name)
     const blocks = []
-    if (day.members.noah && !day.members.noah.canCook) blocks.push('noah-cant-cook')
-    if (day.members.jonas && !day.members.jonas.canDishes) blocks.push('jonas-cant-wash')
+    if (day.members['lars-kristian'] && !day.members['lars-kristian'].canCook) blocks.push('lars-cant-cook')
+    if (day.members.elias && !day.members.elias.canDishes) blocks.push('elias-cant-wash')
     console.log(
       date,
       formatWhen(date).weekday.padEnd(3),
@@ -28,7 +28,7 @@ for (const offset of [0, 1]) {
 console.log('\nFAIRNESS including today')
 for (const row of fairnessRows(state, todayISO(), { includeEnd: true })) {
   console.log(
-    row.person.name.padEnd(8),
+    row.person.name.padEnd(14),
     `cook ${row.cook.done}/${row.cook.available}`,
     `wash ${row.dish.done}/${row.dish.available}`,
   )

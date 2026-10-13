@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
-import { Avatar, FoodImg, Sheet } from '../ui.jsx'
+import { Avatar, FoodImg, Sheet, VoteBreakdown } from '../ui.jsx'
 import { formatWhen, hardBlocks, listNames, rankRecipes, recipeById, swapsFor, todayISO } from '../logic.js'
 import { dutyNote, eatingNote } from './Plan.jsx'
 
@@ -51,19 +51,31 @@ export function DayScreen({ date }) {
         </section>
       ) : (
         <>
-          <section className="panel">
+          <section className={recipe ? (day.mealLocked ? 'panel meal-chosen' : 'panel meal-suggested') : 'panel'}>
             <div className="panel-label">
               <h2>Dinner</h2>
-              <span>{day.mealLocked ? 'Chosen' : recipe ? 'Suggested' : 'Empty'}</span>
+              {recipe && (
+                <span className={day.mealLocked ? 'meal-state chosen' : 'meal-state suggested'}>
+                  {day.mealLocked ? 'Chosen' : 'Suggestion'}
+                </span>
+              )}
             </div>
             {recipe ? (
-              <a className="meal-row" href={`#/cook/${recipe.id}?d=${date}`}>
-                <FoodImg recipe={recipe} className="thumb" />
-                <span>
-                  <strong>{recipe.title}</strong>
-                  <small>{recipe.minutes} min</small>
-                </span>
-              </a>
+              <>
+                <a className="meal-row" href={`#/cook/${recipe.id}?d=${date}`}>
+                  <FoodImg recipe={recipe} className="thumb" />
+                  <span>
+                    <strong>{recipe.title}</strong>
+                    <small>{recipe.minutes} min</small>
+                  </span>
+                </a>
+                <p className="quiet">
+                  {day.mealLocked
+                    ? 'Locked in. Resuggest leaves this night alone.'
+                    : 'A suggestion for who’s home. Accept it, or look at another before you do.'}
+                </p>
+                <VoteBreakdown recipeId={recipe.id} />
+              </>
             ) : (
               <p>Nothing fits the people who are in. Someone may need to sit out, or add a recipe.</p>
             )}
@@ -71,17 +83,24 @@ export function DayScreen({ date }) {
             {swaps.map((swap) => (
               <p className="swap" key={swap}>{swap}</p>
             ))}
-            <div className="row-actions">
-              <button type="button" className="btn ghost" onClick={() => store.anotherRecipe(date)}>
-                Another idea
+            {recipe && !day.mealLocked && (
+              <button type="button" className="btn" data-testid="accept-meal" onClick={() => store.chooseRecipe(date, recipe.id)}>
+                Accept this dinner
               </button>
+            )}
+            <div className="row-actions">
+              {recipe && (
+                <button type="button" className="btn ghost" onClick={() => store.anotherRecipe(date)}>
+                  {day.mealLocked ? 'Different idea' : 'Another idea'}
+                </button>
+              )}
               <button type="button" className="btn ghost" data-testid="choose-meal" onClick={() => setSheet('meal')}>
-                Choose
+                {day.mealLocked ? 'Change dinner' : recipe ? 'Pick instead' : 'Choose dinner'}
               </button>
             </div>
             {day.mealLocked && (
               <button type="button" className="text-btn" onClick={() => store.unlockMeal(date)}>
-                Let the flat decide again
+                Make this a suggestion again
               </button>
             )}
           </section>
@@ -91,36 +110,50 @@ export function DayScreen({ date }) {
             <input value={day.note} onChange={(event) => store.setNote(date, event.target.value)} placeholder="Leftovers, guests, a late night" />
           </label>
 
-          <section className="panel">
-            <h2>Who's in</h2>
+          <section className="panel" data-testid="whos-in">
+            <div className="panel-label">
+              <h2>Who's in</h2>
+              <a href={`#/availability?d=${date}`}>Week</a>
+            </div>
+            <p className="quiet">This night only. The week calendar is the easier place to look across days. You can change your own row.</p>
             <ul className="people">
-              {store.roommates.map((person) => {
+              {[...store.roommates].sort((a, b) => (a.id === store.meId ? -1 : b.id === store.meId ? 1 : a.order - b.order)).map((person) => {
                 const member = day.members[person.id] || { eating: true, canCook: true, canDishes: true }
+                const mine = person.id === store.meId
                 return (
-                  <li key={person.id}>
+                  <li key={person.id} className={mine ? 'mine' : ''} data-testid={mine ? 'my-availability' : `availability-${person.id}`}>
                     <div className="person-name">
                       <Avatar person={person} size={36} />
                       <strong>{person.name}</strong>
+                      {mine && <span className="you-tag">You</span>}
                     </div>
                     <div className="toggles">
-                      <button type="button" className={member.eating ? 'chip-toggle on' : 'chip-toggle'} onClick={() => store.setMember(date, person.id, { eating: !member.eating })}>
+                      <button
+                        type="button"
+                        className={member.eating ? 'chip-toggle avail on' : 'chip-toggle avail'}
+                        aria-pressed={member.eating}
+                        disabled={!mine}
+                        onClick={() => store.setMember(date, person.id, { eating: !member.eating })}
+                      >
                         {member.eating ? 'In' : 'Out'}
                       </button>
                       <button
                         type="button"
-                        className={member.canCook && member.eating ? 'chip-toggle on' : 'chip-toggle'}
-                        disabled={!member.eating}
+                        className={member.canCook && member.eating ? 'chip-toggle avail on' : 'chip-toggle avail'}
+                        aria-pressed={Boolean(member.canCook && member.eating)}
+                        disabled={!mine || !member.eating}
                         onClick={() => store.setMember(date, person.id, { canCook: !member.canCook })}
                       >
-                        Cook
+                        {member.canCook && member.eating ? 'Cook' : 'No cook'}
                       </button>
                       <button
                         type="button"
-                        className={member.canDishes && member.eating ? 'chip-toggle on' : 'chip-toggle'}
-                        disabled={!member.eating}
+                        className={member.canDishes && member.eating ? 'chip-toggle avail on' : 'chip-toggle avail'}
+                        aria-pressed={Boolean(member.canDishes && member.eating)}
+                        disabled={!mine || !member.eating}
                         onClick={() => store.setMember(date, person.id, { canDishes: !member.canDishes })}
                       >
-                        Wash
+                        {member.canDishes && member.eating ? 'Wash' : 'No wash'}
                       </button>
                     </div>
                   </li>
@@ -216,7 +249,7 @@ function MealSheet({ store, day, onClose, onPick }) {
   })
   const groups = [
     ['Fits', ranked.filter((item) => item.band === 'great' || item.band === 'ok')],
-    ['Someone passed', ranked.filter((item) => item.band === 'dislike')],
+    ['Someone said nope', ranked.filter((item) => item.band === 'dislike')],
     ["Doesn't work tonight", ranked.filter((item) => item.band === 'blocked')],
   ]
   return (

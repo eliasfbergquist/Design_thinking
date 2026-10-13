@@ -1,6 +1,6 @@
 import { MORE_RECIPES } from './more-recipes.js'
 
-export const SEED_VERSION = 2
+export const SEED_VERSION = 6
 
 export const ALLERGENS = [
   ['gluten', 'Gluten'],
@@ -23,74 +23,23 @@ export function allergenLabel(id) {
 const ing = (qty, item, extra = {}) => ({ qty, item, ...extra })
 
 export const ROOMMATES = [
-  { id: 'jonas', name: 'Jonas', color: '#9A3412', diet: 'omnivore', allergies: [], order: 0 },
-  { id: 'maja', name: 'Maja', color: '#9D174D', diet: 'omnivore', allergies: ['dairy'], order: 1 },
-  { id: 'noah', name: 'Noah', color: '#115E59', diet: 'omnivore', allergies: ['nuts', 'peanuts'], order: 2 },
-  { id: 'linnea', name: 'Linnea', color: '#3730A3', diet: 'vegetarian', allergies: [], order: 3 },
-  { id: 'sam', name: 'Sam', color: '#3F6212', diet: 'omnivore', allergies: ['shellfish'], order: 4 },
+  { id: 'elias', name: 'Elias', color: '#9A3412', diet: 'omnivore', allergies: [], order: 0 },
+  { id: 'luca', name: 'Luca', color: '#9D174D', diet: 'omnivore', allergies: [], order: 1 },
+  { id: 'lars-kristian', name: 'Lars Kristian', color: '#115E59', diet: 'omnivore', allergies: [], order: 2 },
+  { id: 'lisa', name: 'Lisa', color: '#3730A3', diet: 'omnivore', allergies: [], order: 3 },
+  { id: 'pavle', name: 'Pavle', color: '#3F6212', diet: 'omnivore', allergies: [], order: 4 },
+  { id: 'shahrzad', name: 'Shahrzad', color: '#B45309', diet: 'omnivore', allergies: [], order: 5 },
+  { id: 'tobias', name: 'Tobias', color: '#1E40AF', diet: 'omnivore', allergies: [], order: 6 },
 ]
 
 export const SEED_VOTES = {
-  jonas: {
-    carbonara: 'love',
-    'beef-tacos': 'love',
-    'bean-tacos': 'yes',
-    'chicken-tikka': 'yes',
-    'smash-burger': 'love',
-    'beef-chili': 'yes',
-    shakshuka: 'no',
-    'salmon-dill': 'love',
-    'lentil-dal': 'yes',
-    'veggie-chili': 'yes',
-  },
-  maja: {
-    carbonara: 'no',
-    'beef-tacos': 'yes',
-    'bean-tacos': 'love',
-    'chicken-tikka': 'no',
-    'smash-burger': 'no',
-    'beef-chili': 'yes',
-    shakshuka: 'yes',
-    'noodle-stirfry': 'love',
-    'salmon-dill': 'no',
-    'lentil-dal': 'love',
-  },
-  noah: {
-    carbonara: 'yes',
-    'beef-tacos': 'love',
-    'bean-tacos': 'yes',
-    'chicken-tikka': 'yes',
-    'smash-burger': 'love',
-    'beef-chili': 'yes',
-    'salmon-dill': 'yes',
-    'lentil-dal': 'yes',
-    'fried-rice': 'love',
-    'pesto-pasta': 'no',
-  },
-  linnea: {
-    carbonara: 'no',
-    'bean-tacos': 'love',
-    'chickpea-tikka': 'yes',
-    'halloumi-burger': 'love',
-    'veggie-chili': 'love',
-    shakshuka: 'love',
-    'noodle-stirfry': 'yes',
-    'lentil-dal': 'love',
-    'mushroom-risotto': 'love',
-    'pesto-pasta': 'yes',
-  },
-  sam: {
-    'bean-tacos': 'love',
-    'lentil-dal': 'love',
-    'fried-rice': 'yes',
-    'veggie-chili': 'yes',
-    'noodle-stirfry': 'yes',
-    shakshuka: 'yes',
-    'salmon-dill': 'no',
-    'fish-tacos': 'yes',
-    'tomato-spaghetti': 'yes',
-    'chickpea-tikka': 'love',
-  },
+  elias: {},
+  luca: {},
+  'lars-kristian': {},
+  lisa: {},
+  pavle: {},
+  shahrzad: {},
+  tobias: {},
 }
 
 const BASE_RECIPES = [
@@ -266,7 +215,7 @@ const BASE_RECIPES = [
     category: 'Curries',
     family: 'tikka',
     variationOf: 'chicken-tikka',
-    twist: 'Chickpeas and no yogurt, so Maja can eat it',
+    twist: 'Chickpeas and no yogurt',
     minutes: 30,
     serves: 4,
     kind: 'veg',

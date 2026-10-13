@@ -9,6 +9,8 @@ import { RecipeScreen, RecipesScreen } from './screens/Recipes.jsx'
 import { CookScreen } from './screens/Cook.jsx'
 import { HouseScreen } from './screens/House.jsx'
 import { AddRecipeScreen } from './screens/AddRecipe.jsx'
+import { AvailabilityScreen } from './screens/Availability.jsx'
+import { SwipesScreen } from './screens/Swipes.jsx'
 
 function parseHash(hash) {
   const raw = (hash || '#/swipe').replace(/^#/, '')
@@ -40,6 +42,8 @@ const TITLES = {
   cook: 'Cook',
   house: 'House',
   add: 'New recipe',
+  availability: 'Availability',
+  swipes: 'Swipes',
 }
 
 function Shell() {
@@ -57,12 +61,14 @@ function Shell() {
 
   let screen = <SwipeScreen />
   if (route.name === 'plan') screen = <PlanScreen />
-  else if (route.name === 'day' && route.param) screen = <DayScreen date={route.param} />
+  else if (route.name === 'day' && route.param) screen = <DayScreen key={route.param} date={route.param} />
   else if (route.name === 'recipes') screen = <RecipesScreen />
   else if (route.name === 'recipe' && route.param) screen = <RecipeScreen id={route.param} />
   else if (route.name === 'cook' && route.param) screen = <CookScreen id={route.param} day={route.query.d || null} />
   else if (route.name === 'house') screen = <HouseScreen />
   else if (route.name === 'add') screen = <AddRecipeScreen />
+  else if (route.name === 'availability') screen = <AvailabilityScreen focus={route.query.d || null} />
+  else if (route.name === 'swipes') screen = <SwipesScreen />
   else if (route.name !== 'swipe') screen = <SwipeScreen />
 
   const tonightHref = tonight?.status === 'out' ? `#/day/${today}` : meal ? `#/cook/${meal.id}?d=${today}` : `#/day/${today}`
@@ -91,6 +97,9 @@ function Shell() {
       {store.whoOpen && (
         <Sheet title="Who's holding the phone?" onClose={() => store.setWhoOpen(false)} testId="sheet-who">
           <p className="lede">Swipes, and the cook view, belong to this person. The plan is shared.</p>
+          <a className="btn ghost full" href="#/swipes" onClick={() => store.setWhoOpen(false)}>
+            See your swipes
+          </a>
           <div className="stack-list">
             {store.roommates.map((person) => (
               <button

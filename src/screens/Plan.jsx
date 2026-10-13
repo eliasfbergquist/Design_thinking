@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
-import { FoodImg } from '../ui.jsx'
-import { formatWhen, listNames, recipeById, todayISO, weekDates } from '../logic.js'
+import { FoodImg, Sheet, VoteBreakdown } from '../ui.jsx'
+import { formatWhen, listNames, recipeById, shoppingList, todayISO, weekDates } from '../logic.js'
 
 function weekTitle(offset) {
   if (offset === 0) return 'This week'
@@ -36,6 +36,7 @@ export function dutyNote(store, day) {
 export function PlanScreen() {
   const store = useStore()
   const [offset, setOffset] = useState(0)
+  const [shopOpen, setShopOpen] = useState(false)
   const dates = weekDates(offset)
   const today = todayISO()
   const tonight = store.plans[today]
@@ -89,6 +90,12 @@ export function PlanScreen() {
           Shuffle duties
         </button>
       </div>
+      <a className="btn ghost full" href="#/availability" data-testid="open-availability">
+        Availability
+      </a>
+      <button type="button" className="btn full" data-testid="shopping-list" onClick={() => setShopOpen(true)}>
+        Shopping list
+      </button>
 
       <ul className="days">
         {dates.map((date) => {
@@ -109,7 +116,8 @@ export function PlanScreen() {
                 <div className="day-copy">
                   <strong>{day.status === 'out' ? 'Eating out' : recipe?.title || 'No meal yet'}</strong>
                   <span>{dutyNote(store, day)}</span>
-                  <span className="quiet">{eatingNote(store, day)}{day.mealLocked ? ' · Chosen' : recipe ? ' · Suggested' : ''}</span>
+                  <span className="quiet">{eatingNote(store, day)}{day.mealLocked ? ' · Chosen' : recipe && day.status !== 'out' ? ' · Suggestion' : ''}</span>
+                  {recipe && day.status !== 'out' ? <VoteBreakdown recipeId={recipe.id} compact /> : null}
                 </div>
                 {recipe && day.status !== 'out' ? <FoodImg recipe={recipe} className="thumb" /> : null}
               </a>
@@ -118,6 +126,55 @@ export function PlanScreen() {
         })}
       </ul>
 
+      {shopOpen && <ShopSheet store={store} dates={dates} title={weekTitle(offset)} onClose={() => setShopOpen(false)} />}
       </div>
+  )
+}
+
+function ShopSheet({ store, dates, title, onClose }) {
+  const [checked, setChecked] = useState({})
+  const { meals, items, skipped } = shoppingList(store, dates)
+  const needed = items.filter((item) => !item.optional)
+  const optional = items.filter((item) => item.optional)
+  function toggle(key) {
+    setChecked((current) => ({ ...current, [key]: !current[key] }))
+  }
+  return (
+    <Sheet title={`${title} shopping`} onClose={onClose} testId="shop-sheet">
+      {meals.length === 0 ? (
+        <p>No home dinners this week, so there is nothing to buy.</p>
+      ) : (
+        <>
+          <div className="shop-head">
+            <p>{meals.map((meal) => meal.title).join(' · ')}</p>
+            {skipped > 0 && <p className="quiet">Eating out and empty nights are left off.</p>}
+          </div>
+          <ShopGroup label="To buy" items={needed} checked={checked} onToggle={toggle} />
+          <ShopGroup label="On the side" items={optional} checked={checked} onToggle={toggle} />
+        </>
+      )}
+    </Sheet>
+  )
+}
+
+function ShopGroup({ label, items, checked, onToggle }) {
+  if (!items.length) return null
+  return (
+    <section>
+      <h3 className="group-label">{label}</h3>
+      <ul className="shop-list">
+        {items.map((item) => (
+          <li key={item.key}>
+            <button type="button" className={checked[item.key] ? 'shop-row done' : 'shop-row'} onClick={() => onToggle(item.key)} aria-pressed={Boolean(checked[item.key])}>
+              <span className="box" aria-hidden="true" />
+              <span>
+                <strong>{item.line}</strong>
+                {item.note && <small>{item.note}</small>}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

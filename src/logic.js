@@ -53,6 +53,28 @@ export function listNames(people) {
   return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
 }
 
+export function voteSummary(state, recipeId) {
+  const love = []
+  const yes = []
+  const no = []
+  const unseen = []
+  for (const person of state.roommates) {
+    const vote = state.votes[person.id]?.[recipeId]
+    if (vote === 'love') love.push(person)
+    else if (vote === 'yes') yes.push(person)
+    else if (vote === 'no') no.push(person)
+    else unseen.push(person)
+  }
+  const parts = []
+  if (love.length) parts.push(`${listNames(love)} loved it`)
+  if (yes.length) parts.push(`${listNames(yes)} said yes`)
+  if (no.length) parts.push(`${listNames(no)} said nope`)
+  if (unseen.length === state.roommates.length) parts.push('No one has swiped')
+  else if (unseen.length === 1) parts.push(`${unseen[0].name} hasn't swiped`)
+  else if (unseen.length) parts.push(`${listNames(unseen)} haven't swiped`)
+  return { love, yes, no, unseen, line: parts.join(' · ') }
+}
+
 export function recipeImage(recipe) {
   if (!recipe) return ''
   if (recipe.image) return recipe.image
@@ -262,7 +284,7 @@ export function rankRecipes(state, day, plans = state.plans) {
         }
       }
       if (loved.length) notes.push(`${listNames(loved)} loved it`)
-      if (passed.length) notes.push(`${listNames(passed)} passed`)
+      if (passed.length) notes.push(`${listNames(passed)} said nope`)
       if (thisWeek.has(recipe.id)) {
         score -= 5
         notes.push('Already this week')
@@ -288,11 +310,11 @@ export function chooseRecipe(state, day, plans = state.plans, options = null) {
     const skipped = ranked.filter((item) => item.recipe.id !== avoidId)
     if (skipped.length) ranked = skipped
   }
-  let pool = ranked.filter((item) => item.band === 'great')
-  if (pool.length < (fresh ? 8 : 1)) {
-    pool = ranked.filter((item) => item.band === 'great' || item.band === 'ok')
-  }
-  if (!pool.length) pool = ranked.filter((item) => item.band === 'dislike')
+  const unique = ranked.filter((item) => item.band !== 'ok')
+  const repeats = ranked.filter((item) => item.band === 'ok')
+  let pool = unique.filter((item) => item.band === 'great')
+  if (!pool.length) pool = unique.filter((item) => item.band === 'dislike')
+  if (!pool.length) pool = repeats
   if (!pool.length) return null
   const best = pool[0].score
   if (fresh) pool = pool.slice(0, 18)
@@ -365,21 +387,9 @@ export function buildPlans(recipes, roommates, votes) {
   const monday = startOfWeek(new Date())
   const start = addDays(monday, -28)
   const plans = {}
-  const linneaOut = isoDate(addDays(monday, 2))
-  const noahCantCook = isoDate(addDays(monday, 3))
-  const eatingOut = isoDate(addDays(monday, 4))
-  const jonasCantWash = isoDate(addDays(monday, 5))
-
   for (let i = 0; i < 49; i += 1) {
     const date = isoDate(addDays(start, i))
     let day = blankDay(date, roommates)
-    if (date === linneaOut) day.members.linnea.eating = false
-    if (date === noahCantCook) day.members.noah.canCook = false
-    if (date === jonasCantWash) day.members.jonas.canDishes = false
-    if (date === eatingOut) {
-      day.status = 'out'
-      day.note = 'Table at the corner place, 19:00'
-    }
     day = applyAuto(day, state, { meal: true, duties: true }, plans)
     plans[date] = day
   }
@@ -401,7 +411,7 @@ export function createInitialState() {
   const plans = buildPlans(recipes, roommates, votes)
   return {
     seedVersion: SEED_VERSION,
-    meId: 'jonas',
+    meId: 'elias',
     dismissedTip: false,
     whoOpen: false,
     roommates,
@@ -491,6 +501,78 @@ export function recipeById(state, id) {
   return state.recipes.find((recipe) => recipe.id === id) || null
 }
 
+function parseShopQty(qty) {
+  const raw = String(qty || '').trim()
+  const match = raw.match(/^(\d+(?:[.,]\d+)?)(?:\s*([^\d\s]+))?$/)
+  if (!match) return { amount: null, unit: '', raw }
+  return { amount: Number(match[1].replace(',', '.')), unit: match[2] || '', raw }
+}
+
+function formatShopAmount(amount) {
+  const rounded = Math.round(amount * 100) / 100
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-6) return String(Math.round(rounded))
+  return String(rounded)
+}
+
+function shopLine(row) {
+  if (row.amount != null) {
+    const qty = `${formatShopAmount(row.amount)}${row.unit ? ` ${row.unit}` : ''}`.trim()
+    return `${qty} ${row.item}`.trim()
+  }
+  return row.raw ? `${row.raw} ${row.item}`.trim() : row.item
+}
+
+export function shoppingList(state, dates) {
+  const buckets = new Map()
+  const meals = []
+  let skipped = 0
+  for (const date of dates) {
+    const day = state.plans[date]
+    if (!day || day.status !== 'home' || !day.recipeId) {
+      skipped += 1
+      continue
+    }
+    const recipe = recipeById(state, day.recipeId)
+    if (!recipe) {
+      skipped += 1
+      continue
+    }
+    meals.push({ date, title: recipe.title })
+    for (const ingredient of recipe.ingredients || []) {
+      const item = String(ingredient.item || '').trim()
+      if (!item) continue
+      const parsed = parseShopQty(ingredient.qty)
+      const optional = Boolean(ingredient.optional)
+      const key = `${item.toLowerCase()}|${parsed.unit}|${optional ? 'opt' : 'need'}`
+      const current = buckets.get(key)
+      if (!current) {
+        buckets.set(key, {
+          key,
+          item,
+          unit: parsed.unit,
+          amount: parsed.amount,
+          raw: parsed.amount == null ? parsed.raw : '',
+          optional,
+          allergen: ingredient.allergen || '',
+        })
+      } else if (parsed.amount != null && current.amount != null) {
+        current.amount += parsed.amount
+      } else {
+        current.raw = [current.raw, parsed.raw].filter(Boolean).join(' + ')
+        current.amount = null
+      }
+    }
+  }
+  const items = [...buckets.values()]
+    .map((row) => ({
+      ...row,
+      line: shopLine(row),
+      note: row.optional ? `Optional${row.allergen ? ` · ${allergenLabel(row.allergen)}` : ''}` : '',
+    }))
+    .sort((a, b) => Number(a.optional) - Number(b.optional) || a.item.localeCompare(b.item))
+  return { meals, items, skipped }
+}
+
 function slug(value) {
   return (
     String(value || '')
@@ -500,7 +582,7 @@ function slug(value) {
   )
 }
 
-const PALETTE = ['#9A3412', '#9D174D', '#115E59', '#3730A3', '#3F6212', '#92400E']
+const PALETTE = ['#9A3412', '#9D174D', '#115E59', '#3730A3', '#3F6212', '#B45309', '#1E40AF', '#7C3AED']
 
 export function reducer(state, action) {
   switch (action.type) {
@@ -534,6 +616,7 @@ export function reducer(state, action) {
         { meal: !action.out, duties: true },
       )
     case 'set-member':
+      if (action.id !== state.meId) return state
       return writeDay(
         state,
         action.date,
@@ -563,6 +646,7 @@ export function reducer(state, action) {
     case 'another-recipe': {
       const day = state.plans[action.date]
       if (!day) return state
+      const wasLocked = Boolean(day.mealLocked)
       const pick = chooseRecipe(state, { ...day, mealLocked: false }, state.plans, {
         avoidId: day.recipeId,
         fresh: true,
@@ -574,7 +658,7 @@ export function reducer(state, action) {
         action.date,
         (current) => {
           current.recipeId = pick.recipe.id
-          current.mealLocked = true
+          current.mealLocked = wasLocked
           current.status = 'home'
           return current
         },
@@ -589,7 +673,7 @@ export function reducer(state, action) {
           day.mealLocked = false
           return day
         },
-        { meal: true, duties: false, fresh: true, salt: `unlock:${Date.now()}:${Math.random()}` },
+        { duties: false },
       )
     case 'set-cook':
       return writeDay(

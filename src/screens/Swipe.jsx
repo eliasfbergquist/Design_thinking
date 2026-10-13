@@ -9,6 +9,7 @@ export function SwipeScreen() {
   const top = deck[0]
   const [drag, setDrag] = useState({ x: 0, y: 0 })
   const [leaving, setLeaving] = useState(null)
+  const [loveBurst, setLoveBurst] = useState(0)
   const point = useRef(null)
   const dragRef = useRef({ x: 0, y: 0 })
   const timer = useRef(null)
@@ -17,6 +18,7 @@ export function SwipeScreen() {
 
   function commit(choice) {
     if (!top || leaving) return
+    if (choice === 'love') setLoveBurst((count) => count + 1)
     setLeaving(choice)
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
@@ -54,6 +56,9 @@ export function SwipeScreen() {
         <button type="button" className="btn ghost" onClick={store.clearMyVotes}>
           Swipe them again
         </button>
+        <a className="btn ghost" href="#/swipes">
+          Your swipes
+        </a>
       </div>
     )
   }
@@ -69,9 +74,13 @@ export function SwipeScreen() {
 
   return (
     <div className="deck">
+      {loveBurst > 0 && <LoveConfetti burst={loveBurst} />}
+      <a className="deck-link" href="#/swipes" data-testid="your-swipes">
+        Your swipes
+      </a>
       {!store.dismissedTip && (
         <div className="tip">
-          <p>Swiping as {store.roommates.find((person) => person.id === store.meId)?.name}. Right for yes, left to pass, up if you want it soon.</p>
+          <p>Swiping as {store.roommates.find((person) => person.id === store.meId)?.name}. Right for yes, left for nope, up if you want it soon.</p>
           <button type="button" onClick={store.dismissTip} aria-label="Dismiss">
             ×
           </button>
@@ -95,6 +104,8 @@ export function SwipeScreen() {
                 active
                   ? (event) => {
                       if (leaving) return
+                      if (event.pointerType === 'mouse' && event.button !== 0) return
+                      event.preventDefault()
                       point.current = { x: event.clientX, y: event.clientY }
                       event.currentTarget.setPointerCapture(event.pointerId)
                     }
@@ -136,16 +147,16 @@ export function SwipeScreen() {
                   : undefined
               }
             >
-              {active ? <CardBody recipe={recipe} drag={drag} /> : <FoodImg recipe={recipe} className="swipe-photo" />}
+              {active ? <CardBody recipe={recipe} drag={drag} loved={leaving === 'love'} /> : <FoodImg recipe={recipe} className="swipe-photo" />}
             </article>
           )
         })}
       </div>
       <div className="vote-bar">
-        <button type="button" className="vote pass" onClick={() => commit('no')}>
-          Pass
+        <button type="button" className="vote nope" onClick={() => commit('no')}>
+          Nope
         </button>
-        <button type="button" className="vote love" onClick={() => commit('love')}>
+        <button type="button" className="vote love" data-testid="vote-love" onClick={() => commit('love')}>
           Love
         </button>
         <button type="button" className="vote yes" onClick={() => commit('yes')}>
@@ -156,7 +167,34 @@ export function SwipeScreen() {
   )
 }
 
-function CardBody({ recipe, drag }) {
+function LoveConfetti({ burst }) {
+  const pieces = Array.from({ length: 54 }, (_, index) => index)
+  return (
+    <div className="confetti" key={burst} data-testid="love-confetti" aria-hidden="true">
+      {pieces.map((index) => {
+        const angle = (index / 54) * Math.PI * 2 + (index % 3) * 0.2
+        const distance = 90 + (index % 6) * 28
+        return (
+          <i
+            key={index}
+            style={{
+              background: ['#c2410c', '#f4d7a8', '#166534', '#fffaf4', '#9a3412', '#e7c27a'][index % 6],
+              animationDelay: `${(index % 8) * 28}ms`,
+              width: index % 3 === 0 ? 11 : 15,
+              height: index % 2 === 0 ? 20 : 11,
+              borderRadius: index % 4 === 0 ? '50%' : '2px',
+              '--drift': `${Math.cos(angle) * distance}px`,
+              '--rise': `${Math.sin(angle) * distance - 20}px`,
+              '--spin': `${160 + index * 24}deg`,
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function CardBody({ recipe, drag, loved }) {
   const store = useStore()
   const others = store.roommates.filter((person) => {
     if (person.id === store.meId) return false
@@ -167,7 +205,7 @@ function CardBody({ recipe, drag }) {
   const swaps = swapsFor(recipe, store.roommates)
   const yesOpacity = Math.min(1, Math.max(0, drag.x / 90))
   const noOpacity = Math.min(1, Math.max(0, -drag.x / 90))
-  const loveOpacity = Math.min(1, Math.max(0, -drag.y / 80))
+  const loveOpacity = loved ? 1 : Math.min(1, Math.max(0, -drag.y / 80))
 
   return (
     <>

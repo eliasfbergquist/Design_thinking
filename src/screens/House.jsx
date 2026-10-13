@@ -41,7 +41,7 @@ export function HouseScreen() {
     <div className="page">
       <h1 className="page-title">The flat</h1>
       <p className="lede">
-        Jonas, Maja, Noah, Linnea, and Sam already live here. Maja avoids dairy, Noah avoids nuts, Linnea eats vegetarian, Sam avoids shellfish. Switch person from the name at the top — swipes stay with whoever is holding the phone.
+        Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, and Tobias already live here. Nobody has a diet, an allergy, or a swipe yet. Switch person from the name at the top — swipes stay with whoever is holding the phone.
       </p>
 
       {store.roommates.map((person) => (

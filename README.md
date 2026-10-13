@@ -13,7 +13,7 @@ npm run dev
 
 Open the URL Vite prints. On a laptop it sits in a phone frame. On a phone it is full screen. Use the Network URL if you want the same Wi-Fi.
 
-The demo flat is already loaded: Jonas, Maja, Noah, Linnea, and Sam. The name at the top is whoever is holding the phone. Swipes stay with that person. The plan is shared.
+The demo flat is already loaded: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, and Tobias. The name at the top is whoever is holding the phone. Swipes stay with that person. The plan is shared.
 
 ## Scripts
 

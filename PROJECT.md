@@ -9,7 +9,7 @@ This file is the project brain. Update it when the product, the rules, or the bu
 - Step 1 is in the browser: swipe, a shared week, cook mode, allergies, and a rota.
 - The app is called Dinder. The header mark is a flame sitting in a bowl.
 - Stack: Vite 6 + React 18, JSX, no TypeScript, no router library, no backend. State is one object in `localStorage`.
-- Demo flat: Jonas, Maja, Noah, Linnea, Sam. One hundred dinners. Twenty are photographs in `public/food`. The other eighty are drawn in the app.
+- Demo flat: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. One hundred dinners. Twenty are photographs in `public/food`. The other eighty are drawn in the app.
 - Run `npm run dev` and open the URL Vite prints (port 5173). On a laptop the app sits in a phone frame. On a narrow screen it is full bleed. Same Wi-Fi: use the Network URL on a phone.
 
 ## Why this shape
@@ -36,15 +36,19 @@ Web is only the delivery wrapper. Layout, type, and tap targets are for a phone 
 
 The default is that everyone is in for dinner. A person can sit out a day. The whole flat can mark a day as eating out (no meal, no duties, rota does not move).
 
+The week calendar (`#/availability`) is where you see the flat at a glance. A cell is green when that person is in and can cook and wash, amber when they are in but cannot cook or cannot wash, stone when they are out, and striped when the flat is eating out. Only the person holding the phone can change their own row. Switch the name at the top to answer for someone else. The day screen still has Who's in for that one night, with the same rule: green means selected, stone means not, and other people's rows stay readable and do not take taps.
+
 ### Swipes
 
 Swipes belong to whoever is marked as holding the phone. The plan is shared.
 
 - **Yes** — I'd eat this. Worth 1.6 when that person is eating.
 - **Love** — cook it soon. Worth 3.
-- **Pass** — don't plan this for me while I'm eating. Worth −3, and it moves the meal into the "dislike" band so automatic planning skips it.
+- **Nope** — don't plan this for me while I'm eating. Worth −3, and it moves the meal into the "dislike" band so automatic planning skips it. The button, the stamp, and the notes all say "nope". The saved vote is still `'no'`.
 
-A pass is a veto for *automatic* planning only. The flat can still pick that meal by hand. Unseen meals score 0. Passes do not expire.
+A nope is a veto for *automatic* planning only. The flat can still pick that meal by hand. Unseen meals score 0. Nopes do not expire.
+
+The suggested dinner, and each home night on the week plan, shows who loved it, said yes, said nope, or has not swiped. On the day that is a labeled list. On the plan it is a row of faces: rust ring for love, green for yes, tomato for nope, faded for not yet. `#/swipes` lists the phone holder's own votes, grouped Loved, Yes, and Nope. It opens from "Your swipes" on the deck, the empty deck, and the name menu. Switching person shows that person's list.
 
 The deck order is fixed for the catalog. Voting removes a card. The card that was behind it is the next one. Do not rebuild the order from the remaining cards or the peek and the landing card will disagree.
 
@@ -63,7 +67,10 @@ Allergies and diet are editable. Unlocked future dinners are re-picked when they
 
 The app pre-fills about three weeks ahead, plus four weeks of history, so there is something to react to and the rota has a past. Suggested meals stay unlocked (`mealLocked: false`).
 
-- **Another idea** or picking from the list locks that dinner.
+- **Accept this dinner** locks the suggestion that is already showing.
+- **Another idea** on a suggestion draws a new one and leaves it unlocked, so you can look and then accept. On a chosen dinner it replaces the meal and stays locked.
+- Picking from the list locks that dinner.
+- **Make this a suggestion again** clears the lock and keeps the same meal. It does not draw a new one.
 - **Resuggest** draws again for every unlocked night in the week on screen. It refuses the meal that was just there if anything else is eligible. Loved and yes votes are more likely. Unseen meals can still surface. A dinner already on this calendar week is pushed down.
 - The first fill is deterministic from the date, so a reload does not shuffle a saved week. Resuggest is the shuffle, because it uses a fresh salt.
 - If nothing is safe, the day stays empty and says so.
@@ -83,20 +90,17 @@ Cooking and washing are separate. The suggestion is a weighted draw among people
 
 ### Demo flat
 
-| Person | id | Constraint | Why it's here |
-| --- | --- | --- | --- |
-| Jonas | `jonas` | No allergies, omnivore | Default phone holder. Likes most things, passed on shakshuka |
-| Maja | `maja` | Dairy | Forces optional-cheese swaps and blocks creamy dishes |
-| Noah | `noah` | Nuts and peanuts | Blocks pesto and massaman |
-| Linnea | `linnea` | Vegetarian | Meat and fish nights only work when she sits out |
-| Sam | `sam` | Shellfish | Blocks shrimp, prawns, and clam chowder |
+Everyone is an omnivore with no allergies and no swipes. Elias holds the phone. Nobody is sitting out, blocked from a duty, or booked for eating out. The week is still filled, but only from the catalog, because unseen meals score 0.
 
-Seeded shape of the current week (dates are computed from this Monday, not hardcoded):
-
-- Wednesday: Linnea is out, so a meat dinner can win.
-- Thursday: Noah can't cook.
-- Friday: eating out, note "Table at the corner place, 19:00". Rota skips the day.
-- Saturday: Jonas can't wash.
+| Person | id | Constraint |
+| --- | --- | --- |
+| Elias | `elias` | None. Default phone holder |
+| Luca | `luca` | None |
+| Lars Kristian | `lars-kristian` | None |
+| Lisa | `lisa` | None |
+| Pavle | `pavle` | None |
+| Shahrzad | `shahrzad` | None |
+| Tobias | `tobias` | None |
 
 The dishes themselves are an output of the scorer, so they move when votes or `SEED_VERSION` change. History is generated by the same `applyAuto` as the live app, walking forward from four weeks before this Monday.
 
@@ -112,7 +116,7 @@ src/store.jsx           localStorage and the action API
 src/logic.js            dates, scoring, rota, reducer. Change rules here
 src/data.js             allergens, flat, votes, the first 20 recipes, SEED_VERSION
 src/more-recipes.js     the other 80 recipes
-src/ui.jsx              avatar, logo, food image, drawn plate, sheet, icons
+src/ui.jsx              avatar, logo, food image, drawn plate, vote faces, sheet, icons
 src/styles.css          the whole visual system
 src/screens/            one file per surface
 public/food/            JPEGs for the original 20, named {recipeId}.jpg
@@ -159,8 +163,10 @@ There is no react-router. `src/App.jsx` reads `location.hash`.
 | `#/cook/:id` | `CookScreen` | Optional `?d=YYYY-MM-DD` ties swaps to that day's eaters |
 | `#/house` | `HouseScreen` | |
 | `#/add` | `AddRecipeScreen` | |
+| `#/availability` | `AvailabilityScreen` | Optional `?d=YYYY-MM-DD` opens that day. Plan and the day screen link here |
+| `#/swipes` | `SwipesScreen` | The phone holder's own yes, love, and nope list |
 
-Cook mode hides the header and the tab bar. The shell sets `document.title` to `{screen} · Dinder` and `data-today` / `data-screen` on the app root for the screenshot script.
+Cook mode hides the header and the tab bar. The shell sets `document.title` to `{screen} · Dinder` and `data-today` / `data-screen` on the app root for the screenshot script. `DayScreen` is keyed by the date, so a sheet open on one night does not stay open after the hash moves to another day.
 
 The "Tonight" link under the logo opens cook mode when there is a meal, otherwise the day. Eating out opens the day.
 
@@ -172,6 +178,8 @@ Bottom nav: Swipe, Plan, Recipes, House. The Recipes tab stays active on a recip
 
 On load, missing data, bad JSON, or `seedVersion !== SEED_VERSION` throws the saved flat away and calls `createInitialState()`. Bump `SEED_VERSION` in `src/data.js` when seed people, seed votes, seed recipes, or the shape of a saved plan changes. A scoring tweak does not need a bump: saved weeks stay until someone hits Resuggest or Reset. A bump is still the easy way to see a fresh demo.
 
+The current demo is version 6. Versions 3 through 6 all landed on 2026-10-13. A browser that still has an older save is replaced by the clean flat on the next load. See the changelog for what each bump threw away.
+
 `whoOpen` is React state, not part of the saved source of truth. A `whoOpen` field inside the saved object is leftover and ignored.
 
 The household export is `JSON.stringify(store)`. Functions on the store API disappear. Import accepts any object with `roommates`, `recipes`, and `plans`, and replaces the whole state. It does not check `seedVersion`.
@@ -182,8 +190,8 @@ Ingredient checkmarks in cook mode are a second key, `dinder.checks.{recipeId}`.
 
 ```js
 {
-  seedVersion,          // number, currently 2
-  meId,                 // roommate id holding the phone. Seed is 'jonas'
+  seedVersion,          // number, currently 6
+  meId,                 // roommate id holding the phone. Seed is 'elias'
   dismissedTip,         // swipe hint closed
   whoOpen,              // ignored; see above
   roommates: [{
@@ -230,7 +238,7 @@ The first twenty recipes still carry `family`, `variationOf`, and `twist`. Those
   status,               // 'home' | 'out'
   note,
   recipeId,             // null if nothing fits or the flat is out
-  mealLocked,           // true after Another idea, Choose, or "Put it on the plan"
+  mealLocked,           // true after Accept, Choose, a Different idea on an already chosen night, or "Put it on the plan"
   cookId, dishId,       // null when the job is not assigned
   cookLocked, dishLocked,
   members: {
@@ -255,9 +263,9 @@ All of this is in `src/logic.js`. The screens should not reimplement it.
 | --- | --- |
 | Love from an eater | +3 |
 | Yes from an eater | +1.6 |
-| Pass from an eater | −3, and band `dislike` |
+| Nope from an eater | −3, and band `dislike` |
 | No vote | 0 |
-| Same recipe anywhere else in this Monday–Sunday | −5, and band `ok` |
+| Same recipe anywhere else in this Monday–Sunday | −5, and band `ok`. Automatic planning skips it until no other eligible meal exists |
 | Same recipe in the 14 days before this date, but not this week | −3, note "Cooked recently" |
 | Hard block for an eater | band `blocked` |
 
@@ -265,12 +273,12 @@ Bands, in order: `blocked`, `dislike`, `ok` (already this week), otherwise `grea
 
 `chooseRecipe` never picks `blocked`.
 
-- Normal fill (`fresh` false, salt defaults to `seed:{date}`): take `great` meals, or `ok` if there is no `great`, or `dislike` if that is all that exists. Keep those within 1.6 points of the best, at most 8. Weight is `exp((score - best) / 1.8)`. The roll is a FNV-1a hash of the salt, so the same votes and the same date always pick the same dinner.
-- Resuggest, Another idea, and Unlock (`fresh` true): drop the current recipe if any other candidate exists. Take the top 18 of the preferred band. Weight is `exp((score - best) / 4.2)`, so a weaker meal can win. Salt includes `Date.now()` and `Math.random()`, so each tap differs.
+- Normal fill (`fresh` false, salt defaults to `seed:{date}`): take `great` meals that are not already on this Monday–Sunday. If none, take a `dislike` that is also new this week. A repeat (`ok`) is only allowed when nothing else is eligible. Keep those within 1.6 points of the best, at most 8. Weight is `exp((score - best) / 1.8)`. The roll is a FNV-1a hash of the salt, so the same votes and the same date always pick the same dinner.
+- Resuggest and Another idea (`fresh` true): drop the current recipe if any other candidate exists, and still refuse a meal already on this Monday–Sunday until nothing else is eligible. Take the top 18 of that pool. Weight is `exp((score - best) / 4.2)`, so a weaker meal can win. Salt includes `Date.now()` and `Math.random()`, so each tap differs. Choosing by hand can still repeat a dinner.
 
 Resuggest walks the week's dates in order and writes each new pick into `plans` before the next day, so "already this week" sees the new menu rather than the old one. Locked meals and eating-out days are left alone. Resuggest does not move cooks.
 
-`Another idea` locks the new pick. `Unlock` ("Let the flat decide again") clears the lock and draws fresh.
+`Another idea` keeps the lock state it found: a suggestion stays a suggestion, a chosen dinner stays chosen. `Unlock` ("Make this a suggestion again") only clears the lock.
 
 Changing who is eating re-runs the meal picker for an unlocked day, with the stable salt, so the same group gets the same suggestion. Changing only "can cook" does not change the meal. If the current cook is no longer allowed, duties are redrawn with the stable salt. Shuffle is the only path that forces a new duty draw (`forceDuties`).
 
@@ -298,7 +306,7 @@ Equal shares are an even draw, with a small edge to someone who has never done i
 
 The round-robin is computed on the full catalog and then filtered. Removing a voted card must not pull a later category forward. That was the swipe bug: the peek was `deck[1]` of a freshly interleaved list, and the card that landed was a different recipe.
 
-Swipe shows two cards. The back one is `deck[1]`, scaled and shifted down, `pointer-events: none`, `z-index: 1`. The top card is `z-index: 2`. Commit waits 220ms so the exit animation can finish, then dispatches `vote`. Thresholds: x > 96 yes, x < −96 pass, y < −88 and |x| < 80 love. Arrow keys do the same, except while an input is focused. Empty deck offers Browse and "Swipe them again" (`clear-my-votes` for the current person only).
+Swipe shows two cards. The back one is `deck[1]`, scaled and shifted down, `pointer-events: none`, `z-index: 1`. The top card is `z-index: 2`. The whole top card is the drag surface, photo and text. The text does not scroll on its own, and stamps ignore pointers, so a drag that starts on the title moves the card. Commit waits 220ms so the exit animation can finish, then dispatches `vote`. Thresholds: x > 96 yes, x < −96 nope, y < −88 and |x| < 80 love. Arrow keys do the same, except while an input is focused. Empty deck offers Browse and "Swipe them again" (`clear-my-votes` for the current person only). The button, the stamp, and the tip all say Nope.
 
 ### Reducer actions
 
@@ -311,11 +319,11 @@ Screens call methods on `useStore()`. Those dispatch:
 | `set-me` | Changes who holds the phone. Closes the sheet |
 | `dismiss-tip` | Hides the swipe hint |
 | `set-eating-out` | `status` home/out. Coming home refills meal and duties |
-| `set-member` | Patches one person's flags, then meal + duties |
+| `set-member` | Patches one person's flags, then meal + duties. Refuses the patch unless that person is `meId` |
 | `set-note` | Note only |
 | `choose-recipe` | Sets the recipe, locks it, status home, refreshes duties |
-| `another-recipe` | Fresh draw avoiding the current id, then locks |
-| `unlock-meal` | Unlocks and draws fresh |
+| `another-recipe` | Fresh draw avoiding the current id. Stays locked only if the day was already locked |
+| `unlock-meal` | Clears the lock and keeps the current meal |
 | `set-cook` / `set-dish` | Manual assignment. Locks that job. Passing a falsy id clears the lock |
 | `balance-day` / `balance-week` | Clears duty locks and force-draws. The buttons say Shuffle |
 | `resuggest-week` | Fresh meals for unlocked home days in the given date list |
@@ -333,15 +341,15 @@ Screens call methods on `useStore()`. Those dispatch:
 
 ### Swipe — `src/screens/Swipe.jsx`
 
-Deck for `meId`. The card names allergens, spicy, quick (25 minutes or under), the blurb, who else already said yes or love, hard blocks, and the first swap. The tip names the person holding the phone.
+Deck for `meId`. The card names allergens, spicy, quick (25 minutes or under), the blurb, who else already said yes or love, hard blocks, and the first swap. The tip names the person holding the phone. Love throws confetti. "Your swipes" opens the list for this person.
 
 ### Plan — `src/screens/Plan.jsx`
 
-Hero for today, then a week. Offset runs from −2 to 3. Eating-out rows and empty rows drop the thumbnail (`no-photo`). Today gets a highlight. `eatingNote` and `dutyNote` are shared with the day screen.
+Hero for today, then a week. Offset runs from −2 to 3. Eating-out rows and empty rows drop the thumbnail (`no-photo`). Today gets a highlight. `eatingNote` and `dutyNote` are shared with the day screen. Each home dinner shows a row of faces: a rust ring loved it, green said yes, tomato said nope, faded has not swiped. **Availability** opens the week calendar. **Shopping list** opens a sheet of ingredients for the home dinners in the week on screen. Quantities with the same item and unit are added. Optional ingredients sit under "On the side". Eating out and empty nights are left off. Ticks last only while the sheet is open.
 
 ### Day — `src/screens/Day.jsx`
 
-At home / Eating out. Meal row links into cook mode. Another idea, Choose, unlock. Per person: In, Cook, Wash. Duties line plus Shuffle. Past days are labeled "already happened" and stay editable, which will rewrite history the rota later reads. Choose dinner is a sheet with search. With no query it hides blocked meals, because there are a hundred recipes. Search includes them.
+At home / Eating out. Meal row links into cook mode. A suggestion shows an amber rail, who loved it, said yes, said nope, or has not swiped, and **Accept this dinner**, plus Another idea (still a suggestion) and Pick instead. A chosen dinner shows a green rail, Different idea, Change dinner, and Make this a suggestion again. Who's in lists the phone holder first. Only that row can change In, Cook, and Wash. Green means selected, stone means not. Other rows stay readable and do not accept taps. Duties line plus Shuffle. Past days are labeled "already happened" and stay editable, which will rewrite history the rota later reads. Choose dinner is a sheet with search. With no query it hides blocked meals, because there are a hundred recipes. Search includes them. A nope shows up as "Someone said nope".
 
 ### Recipes — `src/screens/Recipes.jsx`
 
@@ -353,7 +361,15 @@ Ingredients or one step at a time. Servings scale with `scaleQty`: quantities be
 
 ### House — `src/screens/House.jsx`
 
-Intro names the five people and their constraints. Diet toggle and allergen chips per person. Add someone. Export `dinder.json` / import. Reset asks for confirmation, then restores the demo. No duty bars.
+Intro names the seven people. The seed has no diets, allergies, or swipes. Diet toggle and allergen chips per person. Add someone. Export `dinder.json` / import. Reset asks for confirmation, then restores the demo. No duty bars.
+
+### Availability — `src/screens/Availability.jsx`
+
+A week grid. Columns are days, rows are people. The label is "You" for the phone holder and the first name for everyone else, so Lars Kristian reads as Lars. The selected day is the column with the dark ring. Tapping a cell only selects that day; the toggles underneath change In, Cook, and Wash for the phone holder. Eating out has no toggles, and says to open the day if dinner moves home. Offset matches the plan, −2 to 3. `?d=` focuses that date when it falls inside the range. "Open the day" goes to `#/day/{date}`. The plan and the day's Who's in both link here.
+
+### Swipes — `src/screens/Swipes.jsx`
+
+Loved, yes, and nope for `meId`, each recipe linking to its page. The who-sheet and the swipe screen both open it.
 
 ### Add recipe — `src/screens/AddRecipe.jsx`
 
@@ -377,7 +393,7 @@ Tokens live at the top of `src/styles.css`.
 - Fraunces for titles and the logo word. Outfit for UI. Both come from Google Fonts in `index.html`. If the font request fails, Georgia and Segoe UI stand in.
 - The app is a column of header, scrolling main, and a tab bar that is not an overlay. Height is `100dvh`, with safe-area padding.
 - At `min-width: 540px` the page background goes dark (`#241c17`) and `#root` becomes a 400px phone, max height `100dvh - 32px`, 8px border, 36px radius.
-- `prefers-reduced-motion` kills transitions.
+- `prefers-reduced-motion` kills transitions and hides the love confetti.
 - Logo component is `Logo` in `src/ui.jsx`. The same mark is `public/favicon.svg`. Use it anywhere the product name is shown. Do not set the word "Dinder" as plain text in the header.
 
 `FoodArt` picks a plate, taco, bowl, stacked burger, rice bowl, salad, baking dish, or skillet from `recipe.category`, tinted with `recipe.color`. It has to read at a 54px thumbnail and on the swipe card.
@@ -413,6 +429,7 @@ Things that look like one-line fixes and are not:
 - Shellfish dishes use `kind: 'fish'`, so a vegetarian is told they "don't eat fish."
 - A new roommate is not written onto past days. Their duty history starts empty, and `candidateKey` puts them at the group's minimum rate.
 - Reset and a `SEED_VERSION` bump both destroy the in-browser flat, including custom recipes and votes.
+- Green curry's blurb says fish sauce is in the paste, so the dish is not vegetarian. That is about the recipe. Blurbs must not say that a named person already skips a food.
 
 ## Progress
 
@@ -420,9 +437,30 @@ Things that look like one-line fixes and are not:
 - 2026-10-06 — Prototype running locally. Visual pass against phone screenshots.
 - 2026-10-06 — Renamed to Dinder. Elias became Jonas, Sam joined. Variations dropped. Deck order fixed. Resuggest redraws the week. Fairness stays in the assigner and off the screen. Eighty more recipes.
 - 2026-10-06 — This file expanded into a handoff: routes, saved shape, scores, and where to edit.
+- 2026-10-13 — See Changelog. The demo that should be on screen is `SEED_VERSION` 6.
+
+## Changelog
+
+### 2026-10-13
+
+The session made the prototype match this flat, then left a clean demo with no one pre-decided. The app was reloaded after the last change so the trial votes from checking the features are gone.
+
+**The flat.** The five seed people (Jonas, Maja, Noah, Linnea, Sam) became seven: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. Elias holds the phone. An earlier mapping had given Luca dairy, Lars Kristian nuts, Lisa vegetarian, and Pavle shellfish, and had scripted Lisa out on Wednesday, Lars unable to cook on Thursday, the flat eating out on Friday, and Elias unable to wash on Saturday. That is all gone. Everyone is an omnivore with no allergies and no swipes, and every night starts with everyone in. Recipe blurbs that named a person's restriction were rewritten. The week is still filled from the catalog, because an unseen meal scores 0. That fill is not a preference.
+
+**Saying nope.** The left swipe was "Pass" on the button and "Nope" on the stamp. Every user-facing word is now Nope. The stored vote stays `'no'`.
+
+**The swipe card.** A drag that started on the title did nothing, because the text area scrolled and stole the gesture. The whole card now moves. Stamps ignore pointers. Love throws a burst of confetti from the middle of the deck and stamps the card Soon. The burst is hidden when the system asks for reduced motion.
+
+**A single night.** A suggestion has an amber rail and has to be accepted. Accept locks the meal that is already showing. Another idea draws a new one and leaves it unlocked. Pick instead opens the list. A chosen dinner has a green rail: Different idea stays locked, and Make this a suggestion again clears the lock without drawing a new meal. Who's in only edits the person holding the phone. Selected chips are green and unselected chips are stone, including on other people's rows, which stay fully visible and disabled.
+
+**The week.** Plan has a shopping list for the home dinners on screen. Matching quantities are added together. Optional ingredients sit under "On the side". Ticks last only while the sheet is open. Availability is the calendar described under Eating together. The same dinner is not planned twice in one Monday–Sunday unless every other eligible meal is already used. Choosing by hand can still repeat a dish. A nope still only blocks automatic planning.
+
+**What people think.** The suggestion and the week rows show who loved a recipe, said yes, said nope, or has not swiped. `#/swipes` is that person's own history. Voting does not redraw the week; a dinner already on the plan stays there, so a nope can show on a suggestion until someone asks for another idea.
+
+**Seed versions the same day.** `SEED_VERSION` 3 was the rename and the first product fixes. 4 cleared the scripted preferences. 5 added the calendar, confetti, vote faces, the no-repeat rule, and the swipes list. 6 throws away the votes and availability edits made while checking those screens, so a reload is the clean demo again.
 
 ## Open questions
 
-- Should a pass fade after a few months, or stay a veto until they swipe again?
+- Should a nope fade after a few months, or stay a veto until they swipe again?
 - Is "excused days don't create debt" what this flat actually wants when someone travels for three weeks?
 - How strong should the lean be when someone is well ahead on cooking? The current curve is the weight formula in `pickPerson`.

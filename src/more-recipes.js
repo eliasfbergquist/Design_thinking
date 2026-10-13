@@ -371,7 +371,7 @@ export const MORE_RECIPES = [
     ['peanuts', 'fish'],
     false,
     '#C4844A',
-    'A mild, peanut-rich beef curry with potato. Not for Noah.',
+    'A mild, peanut-rich beef curry with potato.',
     [x('600 g', 'stewing beef'), x('3 tbsp', 'massaman curry paste'), x('400 ml', 'coconut milk'), x('400 g', 'potatoes'), x('1', 'onion'), x('2 tbsp', 'peanut butter'), x('1 tbsp', 'fish sauce'), x('', 'rice, to serve')],
     [
       'Brown the beef in a little oil. Add the paste and fry for a minute.',
@@ -425,7 +425,7 @@ export const MORE_RECIPES = [
     ['dairy'],
     true,
     '#E25A3C',
-    'Paneer in a tomato and cream sauce. Maja will want a different night.',
+    'Paneer in a tomato and cream sauce.',
     [x('400 g', 'paneer'), x('400 g', 'chopped tomatoes'), x('1', 'onion'), x('3', 'garlic cloves'), x('1 tsp', 'garam masala'), x('100 ml', 'cream'), x('1 tsp', 'chili powder'), x('', 'rice, to serve')],
     [
       'Cube the paneer. Brown it lightly in oil and lift it out.',
@@ -515,7 +515,7 @@ export const MORE_RECIPES = [
     ['shellfish'],
     true,
     '#E06A4A',
-    'A tomato masala with prawns added at the end. Sam sits this one out.',
+    'A tomato masala with prawns added at the end.',
     [x('500 g', 'raw prawns'), x('400 g', 'chopped tomatoes'), x('1', 'onion'), x('3', 'garlic cloves'), x('1 tsp', 'garam masala'), x('1 tsp', 'cumin'), x('1 tsp', 'chili powder'), x('', 'rice, to serve')],
     [
       'Soften the onion. Add the garlic and spices and fry for a minute.',
@@ -551,7 +551,7 @@ export const MORE_RECIPES = [
     [],
     true,
     '#E2A84A',
-    'Turmeric, ginger, and tomato. No cream, so Maja can eat it.',
+    'Turmeric, ginger, and tomato. No cream.',
     [x('700 g', 'chicken thighs'), x('1', 'onion'), x('3', 'garlic cloves'), x('1 thumb', 'ginger'), x('1 tsp', 'turmeric'), x('1 tsp', 'cumin'), x('400 g', 'chopped tomatoes'), x('', 'rice, to serve')],
     [
       'Brown the chicken in oil and lift it out.',
@@ -749,7 +749,7 @@ export const MORE_RECIPES = [
     ['dairy'],
     false,
     '#7DA86A',
-    'Broccoli in a cheddar sauce thinned to a soup. A Maja skip.',
+    'Broccoli in a cheddar sauce thinned to a soup.',
     [x('600 g', 'broccoli'), x('1', 'onion'), x('1', 'potato'), x('700 ml', 'milk'), x('150 g', 'cheddar'), x('', 'salt, pepper, and butter or oil')],
     [
       'Soften the onion in a little butter or oil. Add the diced potato and the milk. Simmer until the potato is soft.',
@@ -785,7 +785,7 @@ export const MORE_RECIPES = [
     ['shellfish', 'dairy'],
     false,
     '#E6D3B0',
-    'Potato, bacon, and clams in milk. Sam and Maja both need another plan.',
+    'Potato, bacon, and clams in milk.',
     [x('2 tins', 'clams'), x('150 g', 'bacon'), x('1', 'onion'), x('500 g', 'potatoes'), x('500 ml', 'milk'), x('2', 'celery sticks'), x('', 'salt, pepper, and thyme')],
     [
       'Cook the bacon until the fat renders. Add the onion and celery and soften them in that fat.',
@@ -911,7 +911,7 @@ export const MORE_RECIPES = [
     [],
     true,
     '#C4533A',
-    'Rice, chicken, and peppers in one pot. No shrimp, so Sam can eat.',
+    'Rice, chicken, and peppers in one pot. No shrimp.',
     [x('500 g', 'chicken thighs'), x('300 g', 'long grain rice'), x('1', 'onion'), x('2', 'peppers'), x('2', 'celery sticks'), x('400 g', 'chopped tomatoes'), x('1 tsp', 'smoked paprika'), x('1 tsp', 'thyme')],
     [
       'Brown the chicken in oil and lift it out. Soften the onion, peppers, and celery in the same pot.',
@@ -1217,7 +1217,7 @@ export const MORE_RECIPES = [
     ['fish', 'dairy', 'gluten'],
     false,
     '#F0E0C0',
-    'Fish in a parsley sauce, under mashed potato. Not a night for Maja.',
+    'Fish in a parsley sauce, under mashed potato.',
     [x('700 g', 'white fish'), x('800 g', 'potatoes'), x('40 g', 'butter'), x('40 g', 'flour'), x('500 ml', 'milk'), x('', 'parsley, salt, and pepper'), x('1', 'lemon')],
     [
       'Boil the potatoes and mash them with a little of the milk and salt. No need for them to be rich.',
@@ -1451,7 +1451,7 @@ export const MORE_RECIPES = [
     ['dairy'],
     false,
     '#E6C27A',
-    'Halloumi, chickpeas, and vegetables on a hot tray. Maja will pick another night.',
+    'Halloumi, chickpeas, and vegetables on a hot tray.',
     [x('2 blocks', 'halloumi'), x('1 tin', 'chickpeas'), x('2', 'peppers'), x('1', 'red onion'), x('200 g', 'cherry tomatoes'), x('1', 'lemon'), x('', 'olive oil, salt, and cumin')],
     [
       'Heat the oven to 210°C. Cut the peppers and onion into wedges. Slice the halloumi into slabs.',

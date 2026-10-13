@@ -1,17 +1,24 @@
 import { useState } from 'react'
 import { allergenLabel } from './data.js'
-import { recipeImage } from './logic.js'
+import { listNames, recipeImage, voteSummary } from './logic.js'
 import { useStore } from './store.jsx'
+
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length < 2) return (parts[0] || '?').slice(0, 1).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
 
 export function Avatar({ person, size = 32 }) {
   if (!person) return <span className="avatar empty" style={{ width: size, height: size }} />
+  const letters = initials(person.name)
   return (
     <span
       className="avatar"
-      style={{ background: person.color, width: size, height: size, fontSize: Math.round(size * 0.42) }}
+      style={{ background: person.color, width: size, height: size, fontSize: Math.round(size * (letters.length > 1 ? 0.32 : 0.42)) }}
       aria-hidden="true"
     >
-      {person.name.slice(0, 1)}
+      {letters}
     </span>
   )
 }
@@ -23,6 +30,47 @@ export function FoodImg({ recipe, className = '' }) {
   return (
     <div className={`food ${className}`} style={{ background: recipe.color || '#E6D3BC' }}>
       {src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} /> : <FoodArt recipe={recipe} />}
+    </div>
+  )
+}
+
+export function VoteBreakdown({ recipeId, compact = false }) {
+  const store = useStore()
+  const summary = voteSummary(store, recipeId)
+  const kindFor = (person) => {
+    const vote = store.votes[person.id]?.[recipeId]
+    if (vote === 'love') return 'love'
+    if (vote === 'yes') return 'yes'
+    if (vote === 'no') return 'nope'
+    return 'new'
+  }
+  const faces = (
+    <span className="vote-faces" aria-label={summary.line}>
+      {store.roommates.map((person) => (
+        <span className={`face face-${kindFor(person)}`} key={person.id} title={`${person.name}`}>
+          <Avatar person={person} size={compact ? 18 : 22} />
+        </span>
+      ))}
+    </span>
+  )
+  if (compact) return faces
+  const rows = [
+    ['Loved', 'love', summary.love],
+    ['Yes', 'yes', summary.yes],
+    ['Nope', 'nope', summary.no],
+    ["Hasn't swiped", 'new', summary.unseen],
+  ].filter(([, , people]) => people.length)
+  return (
+    <div className="vote-breakdown">
+      {faces}
+      <ul>
+        {rows.map(([label, kind, people]) => (
+          <li key={kind}>
+            <span className={`vote-tag ${kind}`}>{label}</span>
+            <span>{listNames(people)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
