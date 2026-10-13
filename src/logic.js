@@ -79,7 +79,8 @@ export function recipeImage(recipe) {
   if (!recipe) return ''
   if (recipe.image) return recipe.image
   if (recipe.illustrated) return ''
-  return `/food/${recipe.id}.jpg`
+  const base = (import.meta.env && import.meta.env.BASE_URL) || '/'
+  return `${base}food/${recipe.id}.jpg`
 }
 
 export function blankDay(date, roommates) {
