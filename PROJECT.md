@@ -9,7 +9,7 @@ This file is the project brain. Update it when the product, the rules, or the bu
 - Step 1 is in the browser: swipe, a shared week, cook mode, allergies, and a rota.
 - The app is called Dinder. The header mark is a flame sitting in a bowl.
 - Stack: Vite 6 + React 18, JSX, no TypeScript, no router library, no backend. State is one object in `localStorage`.
-- Demo flat: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. Thirty-eight dinners, each with a photograph in `public/food`. A drawn plate only appears if a photo fails to load.
+- Demo flat: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. Thirty-nine dinners, each with a photograph in `public/food`. A drawn plate only appears if a photo fails to load.
 - Run `npm run dev` and open the URL Vite prints (port 5173). On a laptop the app sits in a phone frame. On a narrow screen it is full bleed. Same Wi-Fi: use the Network URL on a phone.
 
 ## Why this shape
@@ -475,7 +475,7 @@ Availability is one person's month, with In, Cook, and Wash pinned under the cal
 
 ### 2026-10-19
 
-Every dinner on the deck is a photograph. Recipes without a matching picture were removed or renamed to the picture. The plan no longer stops at the end of October: loading the app fills any missing day from four weeks back through ten weeks ahead, and leaves days that were already planned. The week opens on today. Diet is now omnivore, pescetarian, vegetarian, or vegan. The swipe deck hides food that person cannot eat and is dealt in a random order that stays put until they clear their swipes. Cards show vegan, vegetarian, and gluten-free when those fit. "I want something" suggests a dinner from that craving plus the usual rules. Initials on the week faces stay white, so they read on the avatar color.
+Every dinner on the deck is a photograph. Recipes without a matching picture were removed or renamed to the picture. The plan no longer stops at the end of October: loading the app fills any missing day from four weeks back through ten weeks ahead, and leaves days that were already planned. The week opens on today. Diet is now omnivore, pescetarian, vegetarian, or vegan. The swipe deck hides food that person cannot eat and is dealt in a random order that stays put until they clear their swipes. Cards show vegan, vegetarian, and gluten-free when those fit. "I want something" suggests a dinner from that craving plus the usual rules. Initials on the week faces stay white, so they read on the avatar color. Norwegian tacos were added: seasoned mince, wheat tortillas, and the cold Friday table of lettuce, tomato, cucumber, and sweetcorn. Cheese and sour cream stay optional.
 
 ## Open questions
 
