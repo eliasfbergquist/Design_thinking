@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
-import { Avatar, FoodImg, RateMeal, Sheet, VoteBreakdown } from '../ui.jsx'
+import { Avatar, CravingForm, FoodImg, RateMeal, Sheet, VoteBreakdown } from '../ui.jsx'
 import { formatWhen, hardBlocks, listNames, rankRecipes, recipeById, swapsFor, todayISO } from '../logic.js'
 import { dutyNote, eatingNote } from './Plan.jsx'
 
@@ -104,6 +104,7 @@ export function DayScreen({ date }) {
                 Make this a suggestion again
               </button>
             )}
+            <CravingForm date={date} heading="I want something else" />
           </section>
 
           <label className="field">

@@ -1,4 +1,4 @@
-import { CATEGORIES, RECIPES, ROOMMATES, SEED_VERSION, SEED_VOTES, allergenLabel } from './data.js'
+import { RECIPES, ROOMMATES, SEED_VERSION, SEED_VOTES, allergenLabel } from './data.js'
 
 export { SEED_VERSION }
 
@@ -114,12 +114,45 @@ export function eatersOf(state, day) {
   return state.roommates.filter((person) => ids.has(person.id))
 }
 
+const VEGAN_BLOCKERS = ['dairy', 'eggs', 'fish', 'shellfish']
+
+export function isVegan(recipe) {
+  if (!recipe || recipe.kind !== 'veg') return false
+  return !(recipe.allergens || []).some((id) => VEGAN_BLOCKERS.includes(id))
+}
+
+export function isGlutenFree(recipe) {
+  return !(recipe?.allergens || []).includes('gluten')
+}
+
+export function dietMarks(recipe) {
+  const marks = []
+  if (!recipe) return marks
+  if (isVegan(recipe)) marks.push('vegan')
+  else if (recipe.kind === 'veg') marks.push('vegetarian')
+  if (isGlutenFree(recipe)) marks.push('gluten-free')
+  return marks
+}
+
+function dietReason(person, recipe) {
+  const diet = person.diet || 'omnivore'
+  if (diet === 'vegan' && !isVegan(recipe)) {
+    if (recipe.kind === 'fish') return `${person.name} doesn't eat fish`
+    if (recipe.kind === 'meat') return `${person.name} doesn't eat meat`
+    return `${person.name} eats vegan`
+  }
+  if (diet === 'vegetarian' && recipe.kind !== 'veg') {
+    return `${person.name} doesn't eat ${recipe.kind === 'fish' ? 'fish' : 'meat'}`
+  }
+  if (diet === 'pescetarian' && recipe.kind === 'meat') return `${person.name} doesn't eat meat`
+  return null
+}
+
 export function hardBlocks(recipe, eaters) {
   const reasons = []
   for (const person of eaters) {
-    if (person.diet === 'vegetarian' && recipe.kind !== 'veg') {
-      reasons.push(`${person.name} doesn't eat ${recipe.kind === 'fish' ? 'fish' : 'meat'}`)
-    }
+    const diet = dietReason(person, recipe)
+    if (diet) reasons.push(diet)
     for (const allergen of recipe.allergens || []) {
       if (person.allergies?.includes(allergen)) {
         reasons.push(`${person.name} can't have ${allergenLabel(allergen).toLowerCase()}`)
@@ -302,11 +335,74 @@ export function rankRecipes(state, day, plans = state.plans) {
     .sort((a, b) => b.score - a.score || a.recipe.id.localeCompare(b.recipe.id))
 }
 
+const CRAVING_STOP = new Set(['want', 'today', 'something', 'with', 'and', 'the', 'for', 'dinner', 'food', 'please', 'some', 'like', 'feel', 'this', 'that', 'have', 'from'])
+
+export function cravingScore(recipe, text) {
+  const words = String(text || '')
+    .toLowerCase()
+    .match(/[a-z]+/g)
+    ?.filter((word) => word.length > 2 && !CRAVING_STOP.has(word)) || []
+  if (!words.length) return 0
+  const title = recipe.title.toLowerCase()
+  const ingredients = (recipe.ingredients || []).map((item) => item.item.toLowerCase()).join(' ')
+  const blob = `${title} ${recipe.category.toLowerCase()} ${recipe.kind} ${recipe.blurb.toLowerCase()} ${ingredients}`
+  let score = 0
+  for (const word of words) {
+    if (word === 'vegan') {
+      if (isVegan(recipe)) score += 12
+      continue
+    }
+    if (word === 'vegetarian' || word === 'veggie') {
+      if (recipe.kind === 'veg') score += 10
+      continue
+    }
+    if (word === 'pescetarian' || word === 'pescatarian') {
+      if (recipe.kind !== 'meat') score += 8
+      continue
+    }
+    if (word === 'spicy' || word === 'spiced') {
+      if (recipe.spicy) score += 8
+      continue
+    }
+    if (word === 'chicken' && /chicken|pollo/.test(blob)) {
+      score += /chicken|pollo/.test(title) ? 12 : 7
+      continue
+    }
+    if ((word === 'beef' || word === 'steak') && /beef|steak/.test(blob)) {
+      score += 10
+      continue
+    }
+    if ((word === 'fish' || word === 'seafood') && (recipe.kind === 'fish' || /salmon|tuna|prawn|shrimp|fish|clam/.test(blob))) {
+      score += 10
+      continue
+    }
+    if (word === 'pasta' && /pasta|spaghetti|penne|rigatoni|lasagna|tagliatelle|ziti|mac/.test(blob)) {
+      score += 10
+      continue
+    }
+    if (title.includes(word) || recipe.category.toLowerCase().includes(word)) score += 10
+    else if (ingredients.includes(word) || recipe.blurb.toLowerCase().includes(word)) score += 5
+  }
+  return score
+}
+
 export function chooseRecipe(state, day, plans = state.plans, options = null) {
   const avoidId = typeof options === 'string' ? options : options?.avoidId || null
   const fresh = Boolean(options && typeof options === 'object' && options.fresh)
   const salt = (options && typeof options === 'object' && options.salt) || `seed:${day.date}`
+  const craving = options && typeof options === 'object' ? String(options.craving || '').trim() : ''
   let ranked = rankRecipes(state, day, plans).filter((item) => item.band !== 'blocked')
+  if (craving) {
+    ranked = ranked
+      .map((item) => {
+        const extra = cravingScore(item.recipe, craving)
+        return { ...item, score: item.score + extra, craving: extra }
+      })
+      .sort((a, b) => b.score - a.score || a.recipe.id.localeCompare(b.recipe.id))
+    const hits = ranked.filter((item) => item.craving > 0)
+    if (!hits.length) return null
+    ranked = hits
+  }
   if (avoidId) {
     const skipped = ranked.filter((item) => item.recipe.id !== avoidId)
     if (skipped.length) ranked = skipped
@@ -465,34 +561,127 @@ export function fairnessRows(state, beforeIso, { includeEnd = false } = {}) {
   }))
 }
 
-function catalogOrder(recipes) {
-  const groups = CATEGORIES.map((category) =>
-    recipes
-      .filter((recipe) => !recipe.custom && recipe.category === category)
-      .sort((a, b) => a.id.localeCompare(b.id)),
-  ).filter((group) => group.length)
-  const leftovers = recipes
-    .filter((recipe) => !recipe.custom && !CATEGORIES.includes(recipe.category))
-    .sort((a, b) => a.id.localeCompare(b.id))
-  if (leftovers.length) groups.push(leftovers)
-  const queues = groups.map((group) => [...group])
-  const ordered = []
-  let moved = true
-  while (moved) {
-    moved = false
-    for (const group of queues) {
-      if (group.length) {
-        ordered.push(group.shift())
-        moved = true
-      }
-    }
+function hashString(value) {
+  let hash = 2166136261
+  for (const char of String(value)) {
+    hash ^= char.codePointAt(0)
+    hash = Math.imul(hash, 16777619)
   }
-  return [...recipes.filter((recipe) => recipe.custom), ...ordered]
+  return hash >>> 0
+}
+
+function shuffled(list, seed) {
+  const copy = [...list]
+  let state = hashString(seed) || 1
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+    const swap = state % (index + 1)
+    const item = copy[index]
+    copy[index] = copy[swap]
+    copy[swap] = item
+  }
+  return copy
+}
+
+function freshSeed() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+export function canEat(recipe, person) {
+  if (!person) return true
+  return hardBlocks(recipe, [person]).length === 0
 }
 
 export function deckFor(state) {
   const seen = state.votes[state.meId] || {}
-  return catalogOrder(state.recipes).filter((recipe) => !seen[recipe.id])
+  const me = state.roommates.find((person) => person.id === state.meId)
+  const custom = state.recipes.filter((recipe) => recipe.custom && !seen[recipe.id] && canEat(recipe, me))
+  const catalog = shuffled(
+    state.recipes.filter((recipe) => !recipe.custom),
+    state.deckSeeds?.[state.meId] || state.meId || 'deck',
+  ).filter((recipe) => !seen[recipe.id] && canEat(recipe, me))
+  return [...custom, ...catalog]
+}
+
+export function weekOffset(iso, now = new Date()) {
+  const base = startOfWeek(now).getTime()
+  const target = startOfWeek(parseISO(iso)).getTime()
+  return Math.round((target - base) / (7 * 86400000))
+}
+
+function cloneRecipe(recipe) {
+  return {
+    ...recipe,
+    allergens: [...(recipe.allergens || [])],
+    ingredients: (recipe.ingredients || []).map((item) => ({ ...item })),
+    steps: [...(recipe.steps || [])],
+  }
+}
+
+export function refreshRecipes(state) {
+  const catalog = new Map(RECIPES.map((recipe) => [recipe.id, recipe]))
+  const seen = new Set()
+  const recipes = []
+  for (const recipe of state.recipes || []) {
+    const fresh = catalog.get(recipe.id)
+    if (recipe.custom) {
+      recipes.push(recipe)
+      seen.add(recipe.id)
+      continue
+    }
+    if (!fresh) continue
+    recipes.push(cloneRecipe(fresh))
+    seen.add(recipe.id)
+  }
+  for (const recipe of RECIPES) {
+    if (!seen.has(recipe.id)) recipes.push(cloneRecipe(recipe))
+  }
+  return { ...state, recipes }
+}
+
+export function extendPlans(state, now = new Date()) {
+  const start = isoDate(addDays(startOfWeek(now), -28))
+  const end = isoDate(addDays(startOfWeek(now), 10 * 7 + 6))
+  const plans = { ...state.plans }
+  let changed = false
+  for (let cursor = parseISO(start); isoDate(cursor) <= end; cursor = addDays(cursor, 1)) {
+    const date = isoDate(cursor)
+    if (plans[date]) continue
+    plans[date] = applyAuto(blankDay(date, state.roommates), { ...state, plans }, { meal: true, duties: true }, plans)
+    changed = true
+  }
+  return changed ? { ...state, plans } : state
+}
+
+export function ensureDeckSeeds(state) {
+  const deckSeeds = { ...(state.deckSeeds || {}) }
+  let changed = false
+  for (const person of state.roommates) {
+    if (!deckSeeds[person.id]) {
+      deckSeeds[person.id] = freshSeed()
+      changed = true
+    }
+  }
+  return changed ? { ...state, deckSeeds } : state
+}
+
+function dropMissingMeals(state) {
+  const ids = new Set(state.recipes.map((recipe) => recipe.id))
+  const plans = { ...state.plans }
+  let changed = false
+  for (const date of Object.keys(plans)) {
+    const day = plans[date]
+    if (day?.recipeId && !ids.has(day.recipeId)) {
+      plans[date] = { ...day, recipeId: null, mealLocked: false }
+      changed = true
+    }
+  }
+  if (!changed) return state
+  return refillUnlockedMeals({ ...state, plans }, null)
+}
+
+export function prepareState(state) {
+  return ensureDeckSeeds(extendPlans(dropMissingMeals(refreshRecipes(state))))
 }
 
 export function personById(state, id) {
@@ -602,8 +791,38 @@ export function reducer(state, action) {
         },
       }
     }
-    case 'clear-my-votes': {
-      return { ...state, votes: { ...state.votes, [state.meId]: {} } }
+    case 'clear-my-votes':
+      return {
+        ...state,
+        votes: { ...state.votes, [state.meId]: {} },
+        deckSeeds: { ...(state.deckSeeds || {}), [state.meId]: freshSeed() },
+      }
+    case 'crave': {
+      const text = String(action.text || '').trim()
+      const day = state.plans[action.date]
+      if (!text) return { ...state, craving: { date: action.date, message: 'Say what you feel like.' } }
+      if (!day || day.status !== 'home') {
+        return { ...state, craving: { date: action.date, message: 'That night is not a home dinner.' } }
+      }
+      const pick = chooseRecipe(state, { ...day, mealLocked: false }, state.plans, {
+        craving: text,
+        salt: `crave:${Date.now()}:${Math.random()}`,
+      })
+      if (!pick) {
+        return { ...state, craving: { date: action.date, message: `Nothing with “${text}” fits who’s home.` } }
+      }
+      const next = writeDay(
+        state,
+        action.date,
+        (current) => {
+          current.recipeId = pick.recipe.id
+          current.mealLocked = false
+          current.status = 'home'
+          return current
+        },
+        { duties: false },
+      )
+      return { ...next, craving: { date: action.date, message: `Suggested ${pick.recipe.title}.` } }
     }
     case 'set-me':
       return { ...state, meId: action.id }
@@ -832,7 +1051,7 @@ export function reducer(state, action) {
       }
     }
     case 'reset':
-      return { ...createInitialState(), whoOpen: false }
+      return { ...prepareState(createInitialState()), whoOpen: false }
     default:
       return state
   }

@@ -118,13 +118,24 @@ function PersonCard({ person, canRemove }) {
         <Avatar person={person} size={40} />
         <strong>{person.name}</strong>
       </div>
-      <div className="segment">
-        <button type="button" className={person.diet !== 'vegetarian' ? 'on' : ''} onClick={() => store.updateRoommate(person.id, { diet: 'omnivore' })}>
-          Omnivore
-        </button>
-        <button type="button" className={person.diet === 'vegetarian' ? 'on' : ''} onClick={() => store.updateRoommate(person.id, { diet: 'vegetarian' })}>
-          Vegetarian
-        </button>
+      <p className="quiet">Diet</p>
+      <div className="toggles wrap">
+        {[
+          ['omnivore', 'Omnivore'],
+          ['pescetarian', 'Pescetarian'],
+          ['vegetarian', 'Vegetarian'],
+          ['vegan', 'Vegan'],
+        ].map(([id, label]) => (
+          <button
+            type="button"
+            key={id}
+            className={(person.diet || 'omnivore') === id ? 'chip-toggle on' : 'chip-toggle'}
+            aria-pressed={(person.diet || 'omnivore') === id}
+            onClick={() => store.updateRoommate(person.id, { diet: id })}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <p className="quiet">Allergies</p>
       <div className="toggles wrap">

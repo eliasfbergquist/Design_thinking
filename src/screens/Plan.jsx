@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store.jsx'
-import { FoodImg, Sheet, VoteBreakdown } from '../ui.jsx'
-import { formatWhen, listNames, recipeById, shoppingList, todayISO, weekDates } from '../logic.js'
+import { CravingForm, FoodImg, Sheet, VoteBreakdown } from '../ui.jsx'
+import { formatWhen, listNames, recipeById, shoppingList, todayISO, weekDates, weekOffset } from '../logic.js'
 
 function weekTitle(offset) {
   if (offset === 0) return 'This week'
@@ -36,9 +36,15 @@ export function dutyNote(store, day) {
 export function PlanScreen() {
   const store = useStore()
   const [offset, setOffset] = useState(0)
+  const [earlier, setEarlier] = useState(false)
   const [shopOpen, setShopOpen] = useState(false)
-  const dates = weekDates(offset)
   const today = todayISO()
+  const week = weekDates(offset)
+  const dates = offset === 0 && !earlier ? week.filter((date) => date >= today) : week
+  const pastInWeek = week.filter((date) => date < today)
+  const offsets = Object.keys(store.plans).map((date) => weekOffset(date))
+  const minOffset = offsets.length ? Math.min(...offsets) : -4
+  const maxOffset = offsets.length ? Math.max(...offsets) : 10
   const tonight = store.plans[today]
   const meal = recipeById(store, tonight?.recipeId)
   const cook = store.roommates.find((person) => person.id === tonight?.cookId)
@@ -73,12 +79,30 @@ export function PlanScreen() {
         </a>
       )}
 
+      {tonight?.status !== 'out' && <CravingForm date={today} heading="I want something tonight" />}
+
       <div className="week-bar">
-        <button type="button" onClick={() => setOffset((value) => Math.max(-2, value - 1))} aria-label="Previous week">
+        <button
+          type="button"
+          onClick={() => {
+            setEarlier(false)
+            setOffset((value) => Math.max(minOffset, value - 1))
+          }}
+          disabled={offset <= minOffset}
+          aria-label="Previous week"
+        >
           ‹
         </button>
         <strong>{weekTitle(offset)}</strong>
-        <button type="button" onClick={() => setOffset((value) => Math.min(3, value + 1))} aria-label="Next week">
+        <button
+          type="button"
+          onClick={() => {
+            setEarlier(false)
+            setOffset((value) => Math.min(maxOffset, value + 1))
+          }}
+          disabled={offset >= maxOffset}
+          aria-label="Next week"
+        >
           ›
         </button>
       </div>
@@ -96,6 +120,12 @@ export function PlanScreen() {
       <button type="button" className="btn full" data-testid="shopping-list" onClick={() => setShopOpen(true)}>
         Shopping list
       </button>
+
+      {offset === 0 && pastInWeek.length > 0 && (
+        <button type="button" className="text-btn" onClick={() => setEarlier((value) => !value)}>
+          {earlier ? 'Hide earlier days' : 'Earlier this week'}
+        </button>
+      )}
 
       <ul className="days">
         {dates.map((date) => {

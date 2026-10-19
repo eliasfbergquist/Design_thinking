@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { allergenLabel } from './data.js'
-import { listNames, recipeImage, voteSummary } from './logic.js'
+import { dietMarks, listNames, recipeImage, voteSummary } from './logic.js'
 import { useStore } from './store.jsx'
 
 function initials(name) {
@@ -20,6 +20,63 @@ export function Avatar({ person, size = 32 }) {
     >
       {letters}
     </span>
+  )
+}
+
+const MARK_LABEL = { vegan: 'Vegan', vegetarian: 'Vegetarian', 'gluten-free': 'Gluten-free' }
+
+function DietGlyph({ id }) {
+  if (id === 'gluten-free') {
+    return (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 1.6c.5 1.8 1.3 3 2.6 3.9 1.4.9 2.4 2 2.4 3.7a5 5 0 1 1-10 0c0-1.7 1-2.8 2.4-3.7C6.7 4.6 7.5 3.4 8 1.6z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M3.2 12.8 12.8 3.2" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M8 14V2.8M8 6.2c2.2-1.8 4.6-1.4 4.6-1.4S12 7 8 7.2M8 8.2C5.6 6.8 3.4 7.2 3.4 7.2S4 10 8 9.2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function DietIcons({ recipe }) {
+  const marks = dietMarks(recipe)
+  if (!marks.length) return null
+  return (
+    <div className="diet-row">
+      {marks.map((id) => (
+        <span className={`diet-icon ${id}`} key={id}>
+          <DietGlyph id={id} />
+          {MARK_LABEL[id]}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+export function CravingForm({ date, heading = 'Feel like something?' }) {
+  const store = useStore()
+  const [text, setText] = useState('')
+  const note = store.craving?.date === date ? store.craving.message : ''
+  return (
+    <form
+      className="crave"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (text.trim()) store.crave(date, text)
+      }}
+    >
+      <label className="field">
+        {heading}
+        <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Chicken, soup, something with rice" />
+      </label>
+      <button type="submit" className="btn" disabled={!text.trim()}>
+        Suggest
+      </button>
+      {note && <p className="quiet">{note}</p>}
+    </form>
   )
 }
 

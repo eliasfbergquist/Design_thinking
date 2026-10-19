@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store.jsx'
-import { AllergenChips, FoodImg } from '../ui.jsx'
-import { deckFor, hardBlocks, listNames, swapsFor } from '../logic.js'
+import { AllergenChips, DietIcons, FoodImg } from '../ui.jsx'
+import { canEat, deckFor, hardBlocks, listNames, swapsFor } from '../logic.js'
 
 export function SwipeScreen() {
   const store = useStore()
@@ -45,11 +45,18 @@ export function SwipeScreen() {
   })
 
   if (!top) {
+    const me = store.roommates.find((person) => person.id === store.meId)
+    const unseen = store.recipes.filter((recipe) => !store.votes[store.meId]?.[recipe.id])
+    const heldBack = unseen.filter((recipe) => !canEat(recipe, me)).length
     return (
       <div className="empty">
         <p className="eyebrow">Caught up</p>
-        <h1>You've seen every dinner.</h1>
-        <p>New recipes show up here. You can also go through the deck again.</p>
+        <h1>{heldBack ? 'Nothing left you can eat.' : "You've seen every dinner."}</h1>
+        <p>
+          {heldBack
+            ? 'The dishes still in the deck don’t fit your diet or allergies. Change those on House, or swipe the ones you can eat again.'
+            : 'New recipes show up here. You can also go through the deck again.'}
+        </p>
         <a className="btn" href="#/recipes">
           Browse recipes
         </a>
@@ -147,7 +154,11 @@ export function SwipeScreen() {
                   : undefined
               }
             >
-              {active ? <CardBody recipe={recipe} drag={drag} loved={leaving === 'love'} /> : <FoodImg recipe={recipe} className="swipe-photo" />}
+              {active ? <CardBody recipe={recipe} drag={drag} loved={leaving === 'love'} /> : (
+                <div className="photo-frame swipe-photo">
+                  <FoodImg recipe={recipe} className="fill" />
+                </div>
+              )}
             </article>
           )
         })}
@@ -198,7 +209,10 @@ function CardBody({ recipe, drag, loved }) {
 
   return (
     <>
-      <FoodImg recipe={recipe} className="swipe-photo" />
+      <div className="photo-frame swipe-photo">
+        <FoodImg recipe={recipe} className="fill" />
+        <DietIcons recipe={recipe} />
+      </div>
       <span className="stamp yes" style={{ opacity: yesOpacity }}>
         Yes
       </span>

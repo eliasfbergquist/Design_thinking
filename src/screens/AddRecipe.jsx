@@ -81,6 +81,7 @@ export function AddRecipeScreen() {
           </button>
         ))}
       </div>
+      <p className="quiet">A vegetarian dish with no dairy, eggs, or fish is treated as vegan. Fish is fine for a pescetarian. Gluten-free means gluten is not a hard allergen.</p>
       <label className="field">
         Shelf
         <select value={draft.category} onChange={(event) => set({ category: event.target.value })}>

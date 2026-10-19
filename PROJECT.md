@@ -9,7 +9,7 @@ This file is the project brain. Update it when the product, the rules, or the bu
 - Step 1 is in the browser: swipe, a shared week, cook mode, allergies, and a rota.
 - The app is called Dinder. The header mark is a flame sitting in a bowl.
 - Stack: Vite 6 + React 18, JSX, no TypeScript, no router library, no backend. State is one object in `localStorage`.
-- Demo flat: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. One hundred dinners. Twenty are photographs in `public/food`. The other eighty are drawn in the app.
+- Demo flat: Elias, Luca, Lars Kristian, Lisa, Pavle, Shahrzad, Tobias. Thirty-eight dinners, each with a photograph in `public/food`. A drawn plate only appears if a photo fails to load.
 - Run `npm run dev` and open the URL Vite prints (port 5173). On a laptop the app sits in a phone frame. On a narrow screen it is full bleed. Same Wi-Fi: use the Network URL on a phone.
 
 ## Why this shape
@@ -38,6 +38,8 @@ The default is that everyone is in for dinner. A person can sit out a day. The w
 
 Availability (`#/availability`) is a month for the person holding the phone. A day is green when they are in and can cook and wash, amber when they are in but cannot cook or cannot wash, stone when they are out, and striped when the flat is eating out. The selected day has a dark ring, and In, Cook, and Wash stay pinned under the month. Switch the name at the top to answer for someone else. The day screen still has Who's in for that one night, with the same rule: green means selected, stone means not, and other people's rows stay readable and do not take taps.
 
+The saved plan used to stop a few weeks after it was first created, so November and later opened as empty days. On each load the app now keeps every existing day and fills any gap from four weeks before this Monday through the Sunday ten weeks ahead.
+
 ### Swipes
 
 Swipes belong to whoever is marked as holding the phone. The plan is shared.
@@ -52,14 +54,16 @@ The suggested dinner, and each home night on the week plan, shows who loved it, 
 
 A dinner that has already happened, and the end of cook mode for today or a past night, can be rated Love, Yes, or Nope. That write replaces the swipe already stored for the person holding the phone.
 
-The deck order is fixed for the catalog. Voting removes a card. The card that was behind it is the next one. Do not rebuild the order from the remaining cards or the peek and the landing card will disagree.
+The deck is shuffled once per person. Voting removes a card, and the card behind it stays next, because the shuffle is of the whole catalog and then the seen cards are skipped. Clearing your swipes deals a new order. A dish the person holding the phone cannot eat, because of their diet or a hard allergy, is not in their deck. The rest of the flat can still be planned that meal. The card shows a leaf for vegan or vegetarian, and a crossed leaf for gluten-free, when those apply. Vegan already counts as vegetarian, so only one of those two is shown.
 
 ### Allergies, diet, and swaps
 
 Hard conflicts are never auto-planned:
 
 - An allergen on a required ingredient (`recipe.allergens`).
-- Meat or fish (`kind` is not `veg`) for a vegetarian who is eating that night. The copy says "fish" when `kind === 'fish'`, otherwise "meat". Shrimp dishes are marked `fish` so a vegetarian is blocked, and they also carry the `shellfish` allergen.
+- Meat (`kind === 'meat'`) for a pescetarian. Fish and vegetarian dishes stay open. The UI word is Pescetarian.
+- Meat or fish for a vegetarian. The copy says "fish" when `kind === 'fish'`, otherwise "meat". Shrimp dishes are marked `fish` so a vegetarian is blocked, and they also carry the `shellfish` allergen.
+- Anything that is not vegan for a vegan. A dish is vegan when `kind === 'veg'` and the hard allergens do not include dairy, eggs, fish, or shellfish. Optional cheese on the side does not block them. The copy says "eats vegan" when the dish is vegetarian but has dairy or eggs.
 
 **Table swaps** are optional ingredients with an allergen (cheddar on the tacos, parmesan on the tomato pasta). The meal stays eligible. The cook view names who needs the swap. Allergen chips turn red only when someone in the flat has that allergy. Optional allergens render as "X on the side" and are not red.
 
@@ -67,7 +71,11 @@ Allergies and diet are editable. Unlocked future dinners are re-picked when they
 
 ### Planning
 
-The app pre-fills about three weeks ahead, plus four weeks of history, so there is something to react to and the rota has a past. Suggested meals stay unlocked (`mealLocked: false`).
+The app pre-fills ten weeks ahead, plus four weeks of history, and tops that up on load without wiping what is already saved. Suggested meals stay unlocked (`mealLocked: false`).
+
+The week list opens on today. Days earlier in the same week are behind "Earlier this week", for re-rating. Other weeks use the arrows, as far as the plan goes.
+
+On the plan and on a day, "I want something" takes a few words (chicken, soup, rice) and suggests one dinner. Blocked meals stay out. Votes, a nope, and "already this week" still count. The suggestion is unlocked, so it still has to be accepted. If nothing eligible matches, the night is left as it was.
 
 - **Accept this dinner** locks the suggestion that is already showing.
 - **Another idea** on a suggestion draws a new one and leaves it unlocked, so you can look and then accept. On a chosen dinner it replaces the meal and stays locked.
@@ -402,9 +410,9 @@ Tokens live at the top of `src/styles.css`.
 
 ## Images
 
-`public/food/{id}.jpg` is served as `/food/{id}.jpg`. The original twenty were downloaded from Unsplash, then a few were replaced from Wikimedia Commons after the first downloads were the wrong dish. `carbonara-peas.jpg` is a copy of `carbonara.jpg` on purpose. `npm run images` re-fetches the Unsplash set and can undo those corrections. Do not run it unless you are ready to look at every photo again.
+`public/food/{id}.jpg` is served as `/food/{id}.jpg`. Every catalog dinner has one. The original twenty came from Unsplash, with a few later swapped from Wikimedia Commons after the first downloads were the wrong dish. `carbonara-peas.jpg` is a copy of `carbonara.jpg` on purpose. `npm run images` re-fetches that original Unsplash set and can undo those corrections. Do not run it unless you are ready to look at every photo again.
 
-The eighty in `src/more-recipes.js` set `illustrated: true`. Adding a real photo means dropping that flag and saving `public/food/{id}.jpg`, or setting `image`.
+Dishes that never got a photo that matched the food were dropped or renamed to the picture. `src/more-recipes.js` still holds the unused recipes, and only exports the ones in `WITH_PHOTOS`. A drawn plate is the fallback when a file is missing.
 
 ## Changing a rule
 
@@ -464,6 +472,10 @@ The session made the prototype match this flat, then left a clean demo with no o
 ### 2026-10-13, later
 
 Availability is one person's month, with In, Cook, and Wash pinned under the calendar. A made dinner can be rated, and that rating replaces the earlier swipe. The swipe deck has no Yes, Love, or Nope buttons. The up-swipe stamp says Love. Swipe history stays in the name menu. The shopping list lets you turn nights off. The first visit to the deck explains the three drags.
+
+### 2026-10-19
+
+Every dinner on the deck is a photograph. Recipes without a matching picture were removed or renamed to the picture. The plan no longer stops at the end of October: loading the app fills any missing day from four weeks back through ten weeks ahead, and leaves days that were already planned. The week opens on today. Diet is now omnivore, pescetarian, vegetarian, or vegan. The swipe deck hides food that person cannot eat and is dealt in a random order that stays put until they clear their swipes. Cards show vegan, vegetarian, and gluten-free when those fit. "I want something" suggests a dinner from that craving plus the usual rules. Initials on the week faces stay white, so they read on the avatar color.
 
 ## Open questions
 

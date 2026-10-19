@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer, useState } from 'react'
-import { SEED_VERSION, createInitialState, reducer } from './logic.js'
+import { SEED_VERSION, createInitialState, prepareState, reducer } from './logic.js'
 
 const KEY = 'dinder.v1'
 const StoreContext = createContext(null)
@@ -9,8 +9,8 @@ function loadState() {
     const raw = localStorage.getItem(KEY)
     if (!raw) return createInitialState()
     const parsed = JSON.parse(raw)
-    if (parsed.seedVersion !== SEED_VERSION || !parsed.recipes || !parsed.roommates) return createInitialState()
-    return parsed
+    if (parsed.seedVersion !== SEED_VERSION || !parsed.recipes || !parsed.roommates) return prepareState(createInitialState())
+    return prepareState(parsed)
   } catch {
     return createInitialState()
   }
@@ -30,6 +30,7 @@ export function StoreProvider({ children }) {
     setWhoOpen,
     dispatch,
     vote: (recipeId, choice) => dispatch({ type: 'vote', recipeId, choice }),
+    crave: (date, text) => dispatch({ type: 'crave', date, text }),
     clearMyVotes: () => dispatch({ type: 'clear-my-votes' }),
     setMe: (id) => {
       dispatch({ type: 'set-me', id })
